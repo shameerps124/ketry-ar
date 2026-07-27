@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ketry-ar",
+  "compatibility_date": "2026-07-27",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "Claude"
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
+}
