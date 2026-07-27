@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Order Status — Ketry</title>
+<style>
+:root{
+  --red:#C0392B; --red-light:#E8574A; --cream:#FFF9F5;
+  --dark:#1A1A1A; --mid:#4A4A4A; --soft:#888; --border:#EEE; --green:#1D9E75;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--cream);color:var(--dark);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:40px 32px;max-width:420px;width:100%;text-align:center;}
+.icon{font-size:48px;margin-bottom:16px;}
+h1{font-size:22px;margin-bottom:10px;}
+p{font-size:15px;color:var(--mid);line-height:1.6;margin-bottom:8px;}
+.code-box{background:var(--cream);border:2px dashed var(--green);border-radius:12px;padding:20px;margin:24px 0;font-size:22px;font-weight:800;letter-spacing:2px;color:var(--green);}
+.spinner{width:32px;height:32px;border:3px solid #eee;border-top-color:var(--green);border-radius:50%;margin:0 auto 20px;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+a.btn{display:inline-block;margin-top:16px;padding:12px 24px;background:var(--green);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px;}
+a.back{display:block;margin-top:16px;font-size:13px;color:var(--soft);text-decoration:none;}
+.err{color:var(--red);}
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="spinner"></div>
+  <h1>Confirming your payment…</h1>
+  <p>This usually takes just a few seconds.</p>
+</div>
+
+<script>
+function getParam(name){
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+async function pollStatus(){
+  const orderId = getParam('order_id') || sessionStorage.getItem('ketryLastOrderId');
+  const card = document.getElementById('card');
+
+  if(!orderId){
+    card.innerHTML = `
+      <div class="icon">🤔</div>
+      <h1 class="err">We couldn't find your order</h1>
+      <p>If you just completed a payment, please check your email/WhatsApp for confirmation, or contact us.</p>
+      <a class="back" href="./index.html">← Back to Ketry</a>`;
+    return;
+  }
+
+  const maxAttempts = 15; // ~30s of polling, webhook is usually near-instant
+  for(let attempt=0; attempt<maxAttempts; attempt++){
+    try {
+      const res = await fetch(`/api/order-status?order_id=${encodeURIComponent(orderId)}`);
+      const data = await res.json();
+
+      if(data.status === 'paid' && data.code){
+        card.innerHTML = `
+          <div class="icon">🎉</div>
+          <h1>Payment successful!</h1>
+          <p>Your Ketry order is confirmed. Here's your AR unlock code — you'll also find it printed inside your box:</p>
+          <div class="code-box">${data.code}</div>
+          <p style="font-size:13px;">Enter this code the first time you open the AR experience on each family device (up to 3 devices).</p>
+          <a class="btn" href="./ar.html">Open AR Experience →</a>
+          <a class="back" href="./index.html">← Back to Ketry</a>`;
+        return;
+      }
+      if(data.status === 'failed'){
+        card.innerHTML = `
+          <div class="icon">😕</div>
+          <h1 class="err">Payment failed</h1>
+          <p>Your payment didn't go through. No amount has been charged. Please try again.</p>
+          <a class="btn" href="./index.html">Try Again →</a>`;
+        return;
+      }
+      // still 'pending' — wait and retry
+      await new Promise(r => setTimeout(r, 2000));
+    } catch(e){
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+
+  // Timed out waiting — payment may still be processing on Cashfree's side
+  card.innerHTML = `
+    <div class="icon">⏳</div>
+    <h1>Still confirming…</h1>
+    <p>Your payment may still be processing. This page will keep checking — please don't close it. If this takes more than a couple of minutes, contact us with your order ID: <strong>${orderId}</strong></p>
+    <a class="back" href="./index.html">← Back to Ketry</a>`;
+}
+
+pollStatus();
+</script>
+
+</body>
+</html>
