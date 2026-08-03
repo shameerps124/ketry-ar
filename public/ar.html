@@ -281,11 +281,18 @@ function stopAudio(name){
 }
 
 // --- Redemption code gate (server-verified, device-limited) ---
+let memoryToken = null; // Safe fallback if browser blocks storage
 function getDeviceToken(){
-  let token = localStorage.getItem('ketryDeviceToken');
+  let token = null;
+  try { token = localStorage.getItem('ketryDeviceToken'); } catch(e){}
+  if(!token) token = memoryToken;
   if(!token){
-    token = crypto.randomUUID();
-    localStorage.setItem('ketryDeviceToken', token);
+    if(typeof crypto !== 'undefined' && crypto.randomUUID){
+      token = crypto.randomUUID();
+    } else {
+      token = 'ketry_' + Math.random().toString(36).substr(2, 9) + Date.now();
+    }
+    try { localStorage.setItem('ketryDeviceToken', token); } catch(e){ memoryToken = token; }
   }
   return token;
 }
@@ -297,8 +304,8 @@ function showAppAfterUnlock(slotsUsed, maxDevices){
   }
 }
 async function redeemCode(code){
-  const deviceToken = getDeviceToken();
   try {
+    const deviceToken = getDeviceToken();
     const res = await fetch('/api/redeem', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -319,8 +326,8 @@ async function checkCode(){
   btn.disabled = false;
   btn.textContent = 'Unlock AR';
   if(result.ok){
-    localStorage.setItem('ketryValidCode', input.value.trim().toUpperCase());
-    err.textContent='';
+    try { localStorage.setItem('ketryValidCode', input.value.trim().toUpperCase()); } catch(e){}
+    err.textContent = '';
     showAppAfterUnlock(result.slotsUsed, result.maxDevices);
   } else {
     err.textContent = result.message || 'Something went wrong. Please try again.';
@@ -329,59 +336,20 @@ async function checkCode(){
 document.getElementById('code-input').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') checkCode();
 });
-// On load: if this device already unlocked before, re-verify quietly
-// (in case the code was later revoked) rather than trusting localStorage alone.
+// On load: Safely check if this device already unlocked before
 (function(){
-  const saved = localStorage.getItem('ketryValidCode');
+  let saved = null;
+  try { saved = localStorage.getItem('ketryValidCode'); } catch(e){}
   if(saved){
     redeemCode(saved).then(result=>{
       if(result.ok){
         showAppAfterUnlock(result.slotsUsed, result.maxDevices);
       } else {
-        localStorage.removeItem('ketryValidCode');
+        try { localStorage.removeItem('ketryValidCode'); } catch(e){}
       }
     });
   }
 })();
-
-let started=false;
-
-function startAR(){
-  if(started) return;
-  started=true;
-
-  // --- NEW CODE: iOS Safari Audio Unlock Trick ---
-  // When the user clicks the start button, silently play and pause all audio 
-  // so Safari registers it as a user-initiated action.
-  ANIMALS.forEach(a => {
-    if(!audioCache[a.audio]) {
-      const snd = new Audio(`./assets/audio/${a.audio}.mp3`);
-      snd.muted = true; // Mute for the initial invisible play
-
-      snd.loop = true;  // <-- NEW: Add this line so Safari knows this is a looping track
-      
-      // Attempt to play and immediately pause
-      const playPromise = snd.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          snd.pause();
-          snd.muted = false; // Unmute for when the card is actually found
-          snd.currentTime = 0;
-        }).catch(err => {
-          console.log("Safari unlock blocked:", err);
-        });
-      }
-      audioCache[a.audio] = snd;
-    }
-  });
-  // --- END NEW CODE ---
-
-  document.getElementById('splash').style.display='none';
-  document.getElementById('loading').style.display='flex';
-  
-  // ... the rest of your existing startAR() code ...
-  document.getElementById('splash').style.display='none';
-  document.getElementById('loading').style.display='flex';
 
   const scene=document.getElementById('arScene');
 
@@ -508,7 +476,7 @@ function startAR(){
       }, LINGER_MS);
     });
   }
-}
+
 </script>
 </body>
 </html>
