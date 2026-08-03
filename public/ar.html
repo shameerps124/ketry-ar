@@ -389,9 +389,52 @@ document.getElementById('code-input').addEventListener('keydown', (e)=>{
   const strips = [];
   const modelEls = [];
   const frozenSlot = document.getElementById('frozen-slot');
+  let started = false;
 
   function clearLinger(i){
     if(hideTimers[i]){ clearTimeout(hideTimers[i]); hideTimers[i]=null; }
+  }
+
+  function startAR(){
+    if(started) return;
+    started = true;
+
+    // --- SAFE CODE: Try to unlock audio, but don't crash if the phone blocks it ---
+    try {
+      ANIMALS.forEach(a => {
+        if(!audioCache[a.audio]) {
+          const snd = new Audio(`./assets/audio/${a.audio}.mp3`);
+          snd.muted = true;
+          snd.loop = true;
+
+          const playPromise = snd.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              snd.pause();
+              snd.muted = false;
+              snd.currentTime = 0;
+            }).catch(err => {
+              // Ignore strict mobile autoplay blocks quietly
+            });
+          }
+          audioCache[a.audio] = snd;
+        }
+      });
+    } catch(audioErr) {
+      console.warn("Audio unlock skipped to save memory.");
+    }
+    // --- END SAFE CODE ---
+
+    // Now safely hide the splash screen and start the camera!
+    document.getElementById('splash').style.display='none';
+    document.getElementById('loading').style.display='flex';
+    reallyStart();
+  }
+
+  function freezeInPlace(i){
+    if(frozenIndex === i) return;
+    frozenSlot.object3D.add(modelEls[i].object3D);
+    frozenIndex = i;
   }
 
   // Move a model's Object3D back under its own MindAR target entity
@@ -416,40 +459,23 @@ document.getElementById('code-input').addEventListener('keydown', (e)=>{
   }
 
   function showTarget(i){
-    // Interrupt whichever animal is currently lingering/active, instantly
-    if((activeIndex !== -1 && activeIndex !== i) || (frozenIndex !== -1 && frozenIndex !== i)){
-      const other = frozenIndex !== -1 ? frozenIndex : activeIndex;
-      hideTarget(other);
-    }
+    startAR();
     clearLinger(i);
-    reattachToTarget(i); // pull back from frozen slot if it was parked there
+    if(activeIndex === i) return;
+    if(activeIndex !== -1) hideTarget(activeIndex);
+    if(frozenIndex === i) reattachToTarget(i);
+
     activeIndex = i;
-    const a = ANIMALS[i];
     strips[i].classList.add('found');
+    document.getElementById('hint').style.opacity='0';
+    document.getElementById('name-banner').style.display='block';
+    document.getElementById('banner-emoji').textContent = ANIMALS[i].em;
+    document.getElementById('banner-en').textContent = ANIMALS[i].en;
+    document.getElementById('banner-ml').textContent = ANIMALS[i].ml;
+
     targets[i].object3D.visible = true;
     modelEls[i].object3D.visible = true;
-    document.getElementById('hint').style.opacity='0';
-    document.getElementById('banner-emoji').textContent=a.em;
-    document.getElementById('banner-en').textContent=a.en;
-    document.getElementById('banner-ml').textContent=a.ml;
-    document.getElementById('name-banner').style.display='block';
-    playAudio(a.audio);
-  }
-
-  // Detach the model from the (now-untracked) MindAR target and park it on
-  // the static frozen-slot, preserving its exact current on-screen position,
-  // so it visually "freezes" regardless of whatever MindAR does to the
-  // original target entity afterwards.
-  function freezeInPlace(i){
-    const targetObj = targets[i].object3D;
-    const modelObj = modelEls[i].object3D;
-    targetObj.updateWorldMatrix(true, false);
-    frozenSlot.object3D.matrixAutoUpdate = false;
-    frozenSlot.object3D.matrix.copy(targetObj.matrixWorld);
-    frozenSlot.object3D.matrixWorldNeedsUpdate = true;
-    frozenSlot.object3D.add(modelObj); // three.js preserves modelObj's local transform
-    modelObj.visible = true;
-    frozenIndex = i;
+    playAudio(ANIMALS[i].audio);
   }
 
   for(let i=0;i<10;i++){
