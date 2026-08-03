@@ -1,10 +1,21 @@
 {
-  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  // Removed $schema reference (untrusted remote URL) to avoid editor warning
+  
   "name": "ketry-ar",
   "compatibility_date": "2026-07-01",
   "main": "worker/index.js",
   "assets": {
     "directory": "./public",
     "binding": "ASSETS"
+    ,"kv_namespaces": [
+  {
+    "binding": "ORDERS",
+    "id": "d70ca9a5aa46465a9e2dec90f838c2b2"
+  },
+  {
+    "binding": "CODES",
+    "id": "7c1c29098f9c40e6a084387cb0bddff9"
+  }
+]
   }
 }
