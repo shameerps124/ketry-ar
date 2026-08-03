@@ -37,8 +37,19 @@ function getParam(name){
 }
 
 async function pollStatus(){
-  const orderId = getParam('order_id') || sessionStorage.getItem('ketryLastOrderId');
+  let orderId = getParam('order_id');
+  
+  // Safely check storage only if it wasn't in the URL
+  if (!orderId) {
+    try {
+      orderId = sessionStorage.getItem('ketryLastOrderId');
+    } catch(storageErr) {
+      console.warn("Session storage blocked.");
+    }
+  }
+
   const card = document.getElementById('card');
+  // ... rest of the function stays the same ...
 
   if(!orderId){
     card.innerHTML = `

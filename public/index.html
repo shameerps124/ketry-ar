@@ -513,8 +513,13 @@ async function proceedToPayment(){
       return;
     }
 
-    // Remember the order id so order-status.html can look it up after redirect
-    sessionStorage.setItem('ketryLastOrderId', data.order_id);
+    // Safely try to remember the order id (ignore if browser blocks it)
+    try {
+      sessionStorage.setItem('ketryLastOrderId', data.order_id);
+    } catch(storageErr) {
+      console.warn("Session storage blocked by browser settings.");
+    }
+
 
     const cashfree = Cashfree({ mode: 'sandbox' }); // switch to 'sandbox' while testing
     cashfree.checkout({
