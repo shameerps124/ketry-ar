@@ -55,7 +55,6 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
 .sc.found{border-color:#1D9E75;background:rgba(29,158,117,0.25);}
 .sc span:first-child{font-size:18px;display:block;margin-bottom:2px;}
 .sc span:last-child{font-size:9px;color:rgba(255,255,255,0.65);font-weight:600;}
-/* --- NEW LOADING SCREEN ANIMATION --- */
 .scan-animation {
   width: 70px;
   height: 70px;
@@ -141,12 +140,10 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
 <div id="loading">
   <img src="./assets/loading-logo.png" alt="Ketry"/>
   <p style="font-size: 16px; font-weight: bold; color: white; margin-bottom: 0;">Starting AR...</p>
-  
   <div class="scan-animation">
     🐄
     <div class="scan-line"></div>
   </div>
-  
   <p style="font-size: 13px; color: #1D9E75; text-align: center; max-width: 250px; line-height: 1.4;">
     Focus your camera directly on a flashcard!
   </p>
@@ -189,64 +186,42 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
   embedded
 >
 
-  <!-- ADD THESE TWO LINES FOR LIGHTING -->
   <a-light type="ambient" color="#ffffff" intensity="1.5"></a-light>
   <a-light type="directional" color="#ffffff" intensity="2" position="0 5 5"></a-light>
 
   <a-camera position="0 0 0" look-controls="enabled: false" near="0.001"></a-camera>
 
-  <!-- Target 0: Cow (Baseline - Perfect) -->
   <a-entity mindar-image-target="targetIndex: 0" id="t0">
     <a-gltf-model position="0 0 0.1" scale="0.6 0.6 0.6" src="./assets/models/cow.glb" animation-mixer></a-gltf-model>
   </a-entity>
-  
-  <!-- Target 1: Dinosaur (Shifted Right and Down to Center) -->
   <a-entity mindar-image-target="targetIndex: 1" id="t1">
     <a-gltf-model position="0.3 -0.5 0.1" scale="0.26 0.26 0.26" src="./assets/models/dinosaur.glb" animation-mixer></a-gltf-model>
   </a-entity>
-  
-  <!-- Target 2: Duck (Reduced massively based on screenshot) -->
   <a-entity mindar-image-target="targetIndex: 2" id="t2">
     <a-gltf-model position="0 0 0.1" scale="0.3 0.3 0.3" src="./assets/models/duck.glb" animation-mixer></a-gltf-model>
   </a-entity>
-  
-  <!-- Target 3: Fox (Reduced slightly) -->
   <a-entity mindar-image-target="targetIndex: 3" id="t3">
     <a-gltf-model position="0 0 0.1" scale="1.2 1.2 1.2" src="./assets/models/fox.glb" animation-mixer></a-gltf-model>
   </a-entity>
-  
-  <!-- Target 4: Frog (Scaled down further and shifted down to Center) -->
   <a-entity mindar-image-target="targetIndex: 4" id="t4">
     <a-gltf-model position="0 -0.3 0.1" scale="0.20 0.20 0.20" src="./assets/models/frog.glb" animation-mixer></a-gltf-model>
   </a-entity>
-  
-  <!-- Target 5: Horse (Reduced and lowered slightly so hooves touch the card) -->
   <a-entity mindar-image-target="targetIndex: 5" id="t5">
     <a-gltf-model position="0 -0.4 0.1" scale="0.45 0.45 0.45" src="./assets/models/horse.glb" animation-mixer></a-gltf-model>
   </a-entity>
-  
-  <!-- Target 6: Raccoon (Increased scale since the screenshot shows it rendering very small) -->
   <a-entity mindar-image-target="targetIndex: 6" id="t6">
     <a-gltf-model position="0 0 0.1" scale="7 7 7" src="./assets/models/raccoon.glb" animation-mixer></a-gltf-model>
   </a-entity>
-  
-  <!-- Target 7: Shark (Baseline - Perfect) -->
   <a-entity mindar-image-target="targetIndex: 7" id="t7">
     <a-gltf-model position="0 0 0.1" scale="0.8 0.8 0.8" src="./assets/models/shark.glb" animation-mixer></a-gltf-model>
   </a-entity>
-  
-  <!-- Target 8: Tiger (Reduced scale) -->
   <a-entity mindar-image-target="targetIndex: 8" id="t8">
     <a-gltf-model position="0 0 0.1" scale="1.3 1.3 1.3" src="./assets/models/tiger.glb" animation-mixer></a-gltf-model>
   </a-entity>
-  
-  <!-- Target 9: Turtle (Centered by pushing it down, and Reduced) -->
   <a-entity mindar-image-target="targetIndex: 9" id="t9">
     <a-gltf-model position="0 -0.8 0.1" scale="0.3 0.3 0.3" src="./assets/models/turtle.glb" animation-mixer></a-gltf-model>
   </a-entity>
 
-  <!-- Static slot MindAR never touches — used to freeze a model in place
-       during the 15s "sticker" grace period after a card is lost -->
   <a-entity id="frozen-slot"></a-entity>
 
 </a-scene>
@@ -268,12 +243,10 @@ const ANIMALS = [
 const audioCache = {};
 function playAudio(name){
   Object.values(audioCache).forEach(a=>{try{a.pause();a.currentTime=0;}catch(e){}});
-  
   if(!audioCache[name]) {
     audioCache[name] = new Audio(`./assets/audio/${name}.mp3`);
-    audioCache[name].loop = true; // <-- NEW: This forces the audio to loop infinitely
+    audioCache[name].loop = true;
   }
-  
   audioCache[name].play().catch(()=>{});
 }
 function stopAudio(name){
@@ -281,7 +254,7 @@ function stopAudio(name){
 }
 
 // --- Redemption code gate (server-verified, device-limited) ---
-let memoryToken = null; // Safe fallback if browser blocks storage
+let memoryToken = null;
 function getDeviceToken(){
   let token = null;
   try { token = localStorage.getItem('ketryDeviceToken'); } catch(e){}
@@ -336,7 +309,6 @@ async function checkCode(){
 document.getElementById('code-input').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') checkCode();
 });
-// On load: Safely check if this device already unlocked before
 (function(){
   let saved = null;
   try { saved = localStorage.getItem('ketryValidCode'); } catch(e){}
@@ -350,6 +322,14 @@ document.getElementById('code-input').addEventListener('keydown', (e)=>{
     });
   }
 })();
+
+// --- Start Camera button (this wrapper was missing — the actual bug) ---
+let started=false;
+function startAR(){
+  if(started) return;
+  started=true;
+  document.getElementById('splash').style.display='none';
+  document.getElementById('loading').style.display='flex';
 
   const scene=document.getElementById('arScene');
 
@@ -368,7 +348,6 @@ document.getElementById('code-input').addEventListener('keydown', (e)=>{
     scene.addEventListener('loaded', reallyStart);
   }
 
-  // Fallback: if renderstart never fires within 20s, force show UI anyway
   let uiShown = false;
   function showUI(){
     if(uiShown) return;
@@ -379,129 +358,93 @@ document.getElementById('code-input').addEventListener('keydown', (e)=>{
   }
 
   scene.addEventListener('renderstart', ()=>setTimeout(showUI, 600));
-  setTimeout(showUI, 6000); // force show after 6s regardless (models load independently in background now)
+  setTimeout(showUI, 6000);
+}
 
-  const LINGER_MS = 15000;
-  let activeIndex = -1;      // index currently live-tracked by MindAR (or -1)
-  let frozenIndex = -1;      // index currently parked in the frozen-slot (or -1)
-  const hideTimers = new Array(10).fill(null);
-  const targets = [];
-  const strips = [];
-  const modelEls = [];
-  const frozenSlot = document.getElementById('frozen-slot');
-  let started = false;
+const LINGER_MS = 15000;
+let activeIndex = -1;
+let frozenIndex = -1;
+const hideTimers = new Array(10).fill(null);
+const targets = [];
+const strips = [];
+const modelEls = [];
+const frozenSlot = document.getElementById('frozen-slot');
 
-  function clearLinger(i){
-    if(hideTimers[i]){ clearTimeout(hideTimers[i]); hideTimers[i]=null; }
+function clearLinger(i){
+  if(hideTimers[i]){ clearTimeout(hideTimers[i]); hideTimers[i]=null; }
+}
+
+function reattachToTarget(i){
+  if(frozenIndex === i){
+    targets[i].object3D.add(modelEls[i].object3D);
+    frozenIndex = -1;
   }
+}
 
-  function startAR(){
-    if(started) return;
-    started = true;
+function hideTarget(i){
+  clearLinger(i);
+  strips[i].classList.remove('found');
+  reattachToTarget(i);
+  targets[i].object3D.visible = false;
+  modelEls[i].object3D.visible = false;
+  stopAudio(ANIMALS[i].audio);
+  if(activeIndex === i) activeIndex = -1;
+  document.getElementById('hint').style.opacity='1';
+  document.getElementById('name-banner').style.display='none';
+}
 
-    // --- SAFE CODE: Try to unlock audio, but don't crash if the phone blocks it ---
-    try {
-      ANIMALS.forEach(a => {
-        if(!audioCache[a.audio]) {
-          const snd = new Audio(`./assets/audio/${a.audio}.mp3`);
-          snd.muted = true;
-          snd.loop = true;
-
-          const playPromise = snd.play();
-          if (playPromise !== undefined) {
-            playPromise.then(() => {
-              snd.pause();
-              snd.muted = false;
-              snd.currentTime = 0;
-            }).catch(err => {
-              // Ignore strict mobile autoplay blocks quietly
-            });
-          }
-          audioCache[a.audio] = snd;
-        }
-      });
-    } catch(audioErr) {
-      console.warn("Audio unlock skipped to save memory.");
-    }
-    // --- END SAFE CODE ---
-
-    // Now safely hide the splash screen and start the camera!
-    document.getElementById('splash').style.display='none';
-    document.getElementById('loading').style.display='flex';
-    reallyStart();
+function showTarget(i){
+  if((activeIndex !== -1 && activeIndex !== i) || (frozenIndex !== -1 && frozenIndex !== i)){
+    const other = frozenIndex !== -1 ? frozenIndex : activeIndex;
+    hideTarget(other);
   }
+  clearLinger(i);
+  reattachToTarget(i);
+  activeIndex = i;
+  const a = ANIMALS[i];
+  strips[i].classList.add('found');
+  targets[i].object3D.visible = true;
+  modelEls[i].object3D.visible = true;
+  document.getElementById('hint').style.opacity='0';
+  document.getElementById('banner-emoji').textContent=a.em;
+  document.getElementById('banner-en').textContent=a.en;
+  document.getElementById('banner-ml').textContent=a.ml;
+  document.getElementById('name-banner').style.display='block';
+  playAudio(a.audio);
+}
 
-  function freezeInPlace(i){
-    if(frozenIndex === i) return;
-    frozenSlot.object3D.add(modelEls[i].object3D);
-    frozenIndex = i;
-  }
+function freezeInPlace(i){
+  const targetObj = targets[i].object3D;
+  const modelObj = modelEls[i].object3D;
+  targetObj.updateWorldMatrix(true, false);
+  frozenSlot.object3D.matrixAutoUpdate = false;
+  frozenSlot.object3D.matrix.copy(targetObj.matrixWorld);
+  frozenSlot.object3D.matrixWorldNeedsUpdate = true;
+  frozenSlot.object3D.add(modelObj);
+  modelObj.visible = true;
+  frozenIndex = i;
+}
 
-  // Move a model's Object3D back under its own MindAR target entity
-  // (restores normal live tracking once that card is found again).
-  function reattachToTarget(i){
-    if(frozenIndex === i){
-      targets[i].object3D.add(modelEls[i].object3D);
-      frozenIndex = -1;
-    }
-  }
+for(let i=0;i<10;i++){
+  targets[i]=document.getElementById('t'+i);
+  strips[i]=document.getElementById('sc'+i);
+  modelEls[i]=targets[i].querySelector('a-gltf-model');
+}
 
-  function hideTarget(i){
-    clearLinger(i);
-    strips[i].classList.remove('found');
-    reattachToTarget(i); // safe no-op if not currently frozen
-    targets[i].object3D.visible = false;
-    modelEls[i].object3D.visible = false;
-    stopAudio(ANIMALS[i].audio);
-    if(activeIndex === i) activeIndex = -1;
-    document.getElementById('hint').style.opacity='1';
-    document.getElementById('name-banner').style.display='none';
-  }
-
-  function showTarget(i){
-    startAR();
-    clearLinger(i);
-    if(activeIndex === i) return;
-    if(activeIndex !== -1) hideTarget(activeIndex);
-    if(frozenIndex === i) reattachToTarget(i);
-
-    activeIndex = i;
-    strips[i].classList.add('found');
-    document.getElementById('hint').style.opacity='0';
-    document.getElementById('name-banner').style.display='block';
-    document.getElementById('banner-emoji').textContent = ANIMALS[i].em;
-    document.getElementById('banner-en').textContent = ANIMALS[i].en;
-    document.getElementById('banner-ml').textContent = ANIMALS[i].ml;
-
-    targets[i].object3D.visible = true;
-    modelEls[i].object3D.visible = true;
-    playAudio(ANIMALS[i].audio);
-  }
-
-  for(let i=0;i<10;i++){
-    targets[i]=document.getElementById('t'+i);
-    strips[i]=document.getElementById('sc'+i);
-    modelEls[i]=targets[i].querySelector('a-gltf-model');
-  }
-
-  for(let i=0;i<10;i++){
-    const target=targets[i];
-    target.addEventListener('targetFound',()=>{
-      showTarget(i);
-    });
-    target.addEventListener('targetLost',()=>{
-      if(activeIndex !== i) return; // stray/duplicate event, ignore
-      activeIndex = -1;
-      freezeInPlace(i);
-      // Don't hide immediately — let the 3D model linger as a "sticker"
-      // for LINGER_MS so a toddler dropping the card doesn't lose the animal.
-      // If a NEW card is found in the meantime, showTarget() above cancels
-      // this and hides/switches instantly instead.
-      hideTimers[i] = setTimeout(()=>{
-        hideTarget(i);
-      }, LINGER_MS);
-    });
-  }
+for(let i=0;i<10;i++){
+  const target=targets[i];
+  target.addEventListener('targetFound',()=>{
+    showTarget(i);
+  });
+  target.addEventListener('targetLost',()=>{
+    if(activeIndex !== i) return;
+    activeIndex = -1;
+    freezeInPlace(i);
+    hideTimers[i] = setTimeout(()=>{
+      hideTarget(i);
+    }, LINGER_MS);
+  });
+}
 
 </script>
 </body>
