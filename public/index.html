@@ -246,6 +246,21 @@ footer a{color:rgba(255,255,255,0.5);text-decoration:none;}
   .product-visual{min-height:200px;}
   nav .nav-links{display:none;}
 }
+/* PERSISTENT AR ACCESS — always visible, no scrolling or menu-hunting needed */
+#ar-fab{
+  position:fixed;bottom:24px;right:24px;z-index:500;
+  width:60px;height:60px;border-radius:50%;
+  background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;text-decoration:none;
+  box-shadow:0 8px 24px rgba(29,158,117,0.4);
+  transition:transform .15s;
+}
+#ar-fab:hover{transform:scale(1.08);}
+#ar-fab:active{transform:scale(0.95);}
+@media (max-width:480px){
+  #ar-fab{width:54px;height:54px;font-size:22px;bottom:18px;right:18px;}
+}
 </style>
 </head>
 <body>
@@ -257,7 +272,7 @@ footer a{color:rgba(255,255,255,0.5);text-decoration:none;}
     <a href="#how">How it works</a>
     <a href="#cards">The Cards</a>
     <a href="#shop">Buy Kit</a>
-    <a href="ar.html">Activate My Kit</a>
+    <a href="ar.html">📷 Open AR</a>
   </div>
   <a href="#shop" class="nav-cta">Buy Kit ₹499</a>
 </nav>
@@ -402,7 +417,7 @@ document.querySelectorAll('.how-video-el').forEach(function(vid){
 <footer>
   <img src="./assets/logo.png" alt="Ketry"/>
   <p>ketry.in · Learn · Play · Grow<br/>
-  <a href="ar.html">Activate My Kit</a> · <a href="privacy.html">Privacy Policy</a> · Made with ❤️ in Kerala, India</p>
+  <a href="ar.html">📷 Open AR</a> · <a href="privacy.html">Privacy Policy</a> · Made with ❤️ in Kerala, India</p>
 </footer>
 
 <!-- PAYMENT MODAL -->
@@ -514,12 +529,8 @@ async function proceedToPayment(){
       return;
     }
 
-    // Safely try to remember the order id (ignore if browser blocks it)
-    try {
-      sessionStorage.setItem('ketryLastOrderId', data.order_id);
-    } catch(storageErr) {
-      console.warn("Session storage blocked by browser settings.");
-    }
+    // Remember the order id so order-status.html can look it up after redirect
+    sessionStorage.setItem('ketryLastOrderId', data.order_id);
 
     const cashfree = Cashfree({ mode: 'sandbox' }); // switch to 'production' once CASHFREE_ENV is production too
     cashfree.checkout({
@@ -535,6 +546,8 @@ async function proceedToPayment(){
   }
 }
 </script>
+
+<a href="ar.html" id="ar-fab" title="Open AR Camera">📷</a>
 
 </body>
 </html>
