@@ -254,21 +254,59 @@ function stopAudio(name){
 }
 
 // --- Redemption code gate (server-verified, device-limited) ---
-let memoryToken = null;
+let memoryToken = null; // Safe fallback if browser blocks storage
+
+// 1. Helper functions for Cookies
+function setCookie(name, value, days) {
+  try {
+    let expires = "";
+    if (days) {
+      let date = new Date();
+      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+      expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/";
+  } catch(e){}
+}
+function getCookie(name) {
+  try {
+    let nameEQ = name + "=";
+    let ca = document.cookie.split(';');
+    for(let i=0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0)==' ') c = c.substring(1,c.length);
+      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+  } catch(e){}
+  return null;
+}
+
+// 2. Upgraded Device Token Generator
 function getDeviceToken(){
   let token = null;
+  // A. Try local storage
   try { token = localStorage.getItem('ketryDeviceToken'); } catch(e){}
+  
+  // B. Try cookie fallback
+  if(!token) token = getCookie('ketryDeviceToken');
+  
+  // C. Try memory fallback
   if(!token) token = memoryToken;
+  
   if(!token){
     if(typeof crypto !== 'undefined' && crypto.randomUUID){
       token = crypto.randomUUID();
     } else {
       token = 'ketry_' + Math.random().toString(36).substr(2, 9) + Date.now();
     }
-    try { localStorage.setItem('ketryDeviceToken', token); } catch(e){ memoryToken = token; }
+    // Save to all 3 places
+    try { localStorage.setItem('ketryDeviceToken', token); } catch(e){}
+    setCookie('ketryDeviceToken', token, 365);
+    memoryToken = token;
   }
   return token;
 }
+
 function showAppAfterUnlock(slotsUsed, maxDevices){
   document.getElementById('code-gate').style.display='none';
   document.getElementById('splash').style.display='flex';
@@ -276,6 +314,7 @@ function showAppAfterUnlock(slotsUsed, maxDevices){
     document.getElementById('slots-note').textContent = `Family device ${slotsUsed} of ${maxDevices} activated`;
   }
 }
+
 async function redeemCode(code){
   try {
     const deviceToken = getDeviceToken();
@@ -289,45 +328,84 @@ async function redeemCode(code){
     return { ok: false, message: 'Could not reach the server. Check your connection and try again.' };
   }
 }
+
 async function checkCode(){
   const input = document.getElementById('code-input');
   const err = document.getElementById('code-error');
   const btn = document.getElementById('code-submit');
   btn.disabled = true;
   btn.textContent = 'Checking...';
+  
   const result = await redeemCode(input.value);
+  
   btn.disabled = false;
   btn.textContent = 'Unlock AR';
+  
   if(result.ok){
+    // Save unlock code to Storage AND Cookie
     try { localStorage.setItem('ketryValidCode', input.value.trim().toUpperCase()); } catch(e){}
+    setCookie('ketryValidCode', input.value.trim().toUpperCase(), 365);
+    
     err.textContent = '';
     showAppAfterUnlock(result.slotsUsed, result.maxDevices);
   } else {
     err.textContent = result.message || 'Something went wrong. Please try again.';
   }
 }
+
 document.getElementById('code-input').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') checkCode();
 });
+
+// On load: Safely check if this device already unlocked before
 (function(){
   let saved = null;
   try { saved = localStorage.getItem('ketryValidCode'); } catch(e){}
+  if(!saved) saved = getCookie('ketryValidCode');
+  
   if(saved){
     redeemCode(saved).then(result=>{
       if(result.ok){
         showAppAfterUnlock(result.slotsUsed, result.maxDevices);
       } else {
         try { localStorage.removeItem('ketryValidCode'); } catch(e){}
+        setCookie('ketryValidCode', '', -1); // Delete cookie
       }
     });
   }
 })();
 
 // --- Start Camera button (this wrapper was missing — the actual bug) ---
-let started=false;
+
+  let started=false;
 function startAR(){
   if(started) return;
   started=true;
+
+  // --- SAFE CODE: Safari Audio Unlock Trick ---
+  try {
+    ANIMALS.forEach(a => {
+      if(!audioCache[a.audio]) {
+        const snd = new Audio(`./assets/audio/${a.audio}.mp3`);
+        snd.muted = true; 
+        snd.loop = true;  
+        
+        const playPromise = snd.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            snd.pause();
+            snd.muted = false; 
+            snd.currentTime = 0;
+          }).catch(err => {});
+        }
+        audioCache[a.audio] = snd;
+      }
+    });
+  } catch(audioErr) {
+    console.warn("Audio unlock skipped.");
+  }
+  // --- END SAFE CODE ---
+
   document.getElementById('splash').style.display='none';
   document.getElementById('loading').style.display='flex';
 
