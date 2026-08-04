@@ -254,57 +254,66 @@ function stopAudio(name){
 }
 
 // --- Redemption code gate (server-verified, device-limited) ---
-let memoryToken = null; // Safe fallback if browser blocks storage
 
-// 1. Helper functions for Cookies
-function setCookie(name, value, days) {
-  try {
-    let expires = "";
-    if (days) {
-      let date = new Date();
-      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-      expires = "; expires=" + date.toUTCString();
-    }
-    document.cookie = name + "=" + (value || "") + expires + "; path=/";
+// "Super Storage" safely tries 4 different methods to beat strict mobile blockers
+function saveTokenAndCode(token, code) {
+  // 1. Local Storage & Session Storage
+  try { 
+    localStorage.setItem('ketryToken', token); localStorage.setItem('ketryCode', code); 
+    sessionStorage.setItem('ketryToken', token); sessionStorage.setItem('ketryCode', code); 
   } catch(e){}
-}
-function getCookie(name) {
-  try {
-    let nameEQ = name + "=";
-    let ca = document.cookie.split(';');
-    for(let i=0; i < ca.length; i++) {
-      let c = ca[i];
-      while (c.charAt(0)==' ') c = c.substring(1,c.length);
-      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
-    }
+  
+  // 2. Cookies
+  try { 
+    document.cookie = "ketryToken=" + token + "; max-age=31536000; path=/"; 
+    document.cookie = "ketryCode=" + code + "; max-age=31536000; path=/"; 
   } catch(e){}
-  return null;
+  
+  // 3. Window Name (Survives strict browsers when navigating to Home and back)
+  try { window.name = "ketry_" + token + "_" + code; } catch(e){}
 }
 
-// 2. Upgraded Device Token Generator
-function getDeviceToken(){
-  let token = null;
-  // A. Try local storage
-  try { token = localStorage.getItem('ketryDeviceToken'); } catch(e){}
+function getSavedData() {
+  let data = { token: null, code: null };
   
-  // B. Try cookie fallback
-  if(!token) token = getCookie('ketryDeviceToken');
+  // Try Local/Session Storage
+  try { data.token = localStorage.getItem('ketryToken') || sessionStorage.getItem('ketryToken'); } catch(e){}
+  try { data.code = localStorage.getItem('ketryCode') || sessionStorage.getItem('ketryCode'); } catch(e){}
   
-  // C. Try memory fallback
-  if(!token) token = memoryToken;
-  
-  if(!token){
-    if(typeof crypto !== 'undefined' && crypto.randomUUID){
-      token = crypto.randomUUID();
-    } else {
-      token = 'ketry_' + Math.random().toString(36).substr(2, 9) + Date.now();
-    }
-    // Save to all 3 places
-    try { localStorage.setItem('ketryDeviceToken', token); } catch(e){}
-    setCookie('ketryDeviceToken', token, 365);
-    memoryToken = token;
+  // Try Cookies
+  if (!data.token) {
+    try {
+      const cookies = document.cookie.split(';');
+      cookies.forEach(c => {
+        if (c.trim().startsWith("ketryToken=")) data.token = c.split('=')[1];
+        if (c.trim().startsWith("ketryCode=")) data.code = c.split('=')[1];
+      });
+    } catch(e){}
   }
-  return token;
+  
+  // Try Window.name (Ultimate fallback)
+  if (!data.token) {
+    try {
+      if (window.name && window.name.startsWith("ketry_")) {
+        const parts = window.name.split('_');
+        data.token = parts[1];
+        data.code = parts[2];
+      }
+    } catch(e){}
+  }
+  return data;
+}
+
+let currentSessionData = getSavedData();
+
+function getDeviceToken(){
+  if (currentSessionData.token) return currentSessionData.token;
+  
+  // Generate a new token only if completely blank across all storage types
+  let newToken = 'ketry_' + Math.random().toString(36).substr(2, 9) + Date.now();
+  currentSessionData.token = newToken;
+  saveTokenAndCode(newToken, currentSessionData.code || '');
+  return newToken;
 }
 
 function showAppAfterUnlock(slotsUsed, maxDevices){
@@ -342,9 +351,9 @@ async function checkCode(){
   btn.textContent = 'Unlock AR';
   
   if(result.ok){
-    // Save unlock code to Storage AND Cookie
-    try { localStorage.setItem('ketryValidCode', input.value.trim().toUpperCase()); } catch(e){}
-    setCookie('ketryValidCode', input.value.trim().toUpperCase(), 365);
+    const validCode = input.value.trim().toUpperCase();
+    currentSessionData.code = validCode;
+    saveTokenAndCode(getDeviceToken(), validCode);
     
     err.textContent = '';
     showAppAfterUnlock(result.slotsUsed, result.maxDevices);
@@ -359,17 +368,17 @@ document.getElementById('code-input').addEventListener('keydown', (e)=>{
 
 // On load: Safely check if this device already unlocked before
 (function(){
-  let saved = null;
-  try { saved = localStorage.getItem('ketryValidCode'); } catch(e){}
-  if(!saved) saved = getCookie('ketryValidCode');
-  
-  if(saved){
-    redeemCode(saved).then(result=>{
+  if(currentSessionData.code){
+    redeemCode(currentSessionData.code).then(result=>{
       if(result.ok){
         showAppAfterUnlock(result.slotsUsed, result.maxDevices);
       } else {
-        try { localStorage.removeItem('ketryValidCode'); } catch(e){}
-        setCookie('ketryValidCode', '', -1); // Delete cookie
+        // If code was revoked, clear storage
+        try { 
+          localStorage.removeItem('ketryCode'); sessionStorage.removeItem('ketryCode');
+          document.cookie = "ketryCode=; max-age=0; path=/";
+          window.name = "ketry_" + currentSessionData.token + "_";
+        } catch(e){}
       }
     });
   }
