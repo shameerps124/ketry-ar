@@ -37,19 +37,10 @@ function getParam(name){
 }
 
 async function pollStatus(){
-  let orderId = getParam('order_id');
-  
-  // Safely check storage only if it wasn't in the URL
-  if (!orderId) {
-    try {
-      orderId = sessionStorage.getItem('ketryLastOrderId');
-    } catch(storageErr) {
-      console.warn("Session storage blocked.");
-    }
-  }
-
+  let fallbackId = null;
+  try { fallbackId = sessionStorage.getItem('ketryLastOrderId'); } catch(e){ /* storage blocked — harmless */ }
+  const orderId = getParam('order_id') || fallbackId;
   const card = document.getElementById('card');
-  // ... rest of the function stays the same ...
 
   if(!orderId){
     card.innerHTML = `
@@ -60,20 +51,19 @@ async function pollStatus(){
     return;
   }
 
-  const maxAttempts = 60; // ~2 full minutes to allow for mobile UPI app switching
+  const maxAttempts = 15; // ~30s of polling, webhook is usually near-instant
   for(let attempt=0; attempt<maxAttempts; attempt++){
     try {
       const res = await fetch(`/api/order-status?order_id=${encodeURIComponent(orderId)}`);
       const data = await res.json();
 
-      if(data.status === 'paid' && data.code){
+      if(data.status === 'paid'){
         card.innerHTML = `
           <div class="icon">🎉</div>
           <h1>Payment successful!</h1>
-          <p>Your Ketry order is confirmed. Here's your AR unlock code — you'll also find it printed inside your box:</p>
-          <div class="code-box">${data.code}</div>
-          <p style="font-size:13px;">Enter this code the first time you open the AR experience on each family device (up to 3 devices).</p>
-          <a class="btn" href="./ar.html">Open AR Experience →</a>
+          <p>Your Ketry order is confirmed and on its way — delivery in 3–5 days.</p>
+          <div class="code-box" style="font-size:15px;letter-spacing:normal;">📦 Your unique AR unlock code will be printed inside the box when it arrives</div>
+          <p style="font-size:13px;">When your kit arrives, look inside the box for your code and enter it the first time you open the AR experience on each family device (up to 3 devices).</p>
           <a class="back" href="./index.html">← Back to Ketry</a>`;
         return;
       }
