@@ -51,7 +51,7 @@ async function pollStatus(){
     return;
   }
 
-  const maxAttempts = 15; // ~30s of polling, webhook is usually near-instant
+  const maxAttempts = 60; // ~2 full minutes to allow for mobile UPI app switching
   for(let attempt=0; attempt<maxAttempts; attempt++){
     try {
       const res = await fetch(`/api/order-status?order_id=${encodeURIComponent(orderId)}`);
