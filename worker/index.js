@@ -148,6 +148,45 @@ async function verifySignature(rawBody, timestamp, signatureHeader, secret) {
   return diff === 0;
 }
 
+// ---------- GET /api/admin/generate-codes ----------
+// Private tool: generates a fresh batch of pre-printable, pre-registered
+// codes — used for BOTH ketry.in orders and Amazon/Flipkart stock alike,
+// since every channel now ships the same physical box with a code inside.
+// Protected by ADMIN_SECRET (set in Cloudflare env vars) — never share this URL.
+async function handleAdminGenerateCodes(request, env) {
+  const url = new URL(request.url);
+  const key = url.searchParams.get('key');
+
+  if (!env.ADMIN_SECRET || key !== env.ADMIN_SECRET) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  let count = parseInt(url.searchParams.get('count') || '100', 10);
+  if (isNaN(count) || count < 1) count = 100;
+  if (count > 1000) count = 1000; // safety cap per request — run multiple times for bigger batches
+
+  const codes = [];
+  for (let i = 0; i < count; i++) {
+    const code = await generateUniqueCode(env);
+    await env.CODES.put(code, JSON.stringify({
+      devices: [],
+      maxDevices: MAX_DEVICES,
+      source: 'batch-preprint',
+      createdAt: Date.now()
+    }));
+    codes.push(code);
+  }
+
+  const csv = 'code\n' + codes.join('\n') + '\n';
+  return new Response(csv, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/csv',
+      'Content-Disposition': `attachment; filename="ketry-codes-${Date.now()}.csv"`
+    }
+  });
+}
+
 async function handleWebhook(request, env) {
   const rawBody = await request.text();
   const signature = request.headers.get('x-webhook-signature');
@@ -183,12 +222,10 @@ async function handleWebhook(request, env) {
 
   if (eventType === 'PAYMENT_SUCCESS_WEBHOOK' || eventType === 'PAYMENT_SUCCESS') {
     if (order.status !== 'paid') {
-      const code = await generateUniqueCode(env);
-      await env.CODES.put(code, JSON.stringify({
-        devices: [], maxDevices: MAX_DEVICES, orderId, createdAt: Date.now()
-      }));
+      // No code is generated here anymore. Every channel (ketry.in, Amazon,
+      // Flipkart) now ships the same physical box with a pre-printed code
+      // inside — see /api/admin/generate-codes for how batches are created.
       order.status = 'paid';
-      order.code = code;
       order.paidAt = Date.now();
       await env.ORDERS.put(orderId, JSON.stringify(order), { expirationTtl: 60 * 60 * 24 * 365 });
     }
@@ -212,10 +249,7 @@ async function handleOrderStatus(request, env) {
     return jsonResponse({ status: 'not_found' }, 404);
   }
   const order = JSON.parse(raw);
-  return jsonResponse({
-    status: order.status,
-    code: order.status === 'paid' ? order.code : null
-  });
+  return jsonResponse({ status: order.status });
 }
 
 // ---------- POST /api/redeem ----------
@@ -278,6 +312,9 @@ export default {
       }
       if (url.pathname === '/api/redeem' && request.method === 'POST') {
         return await handleRedeem(request, env);
+      }
+      if (url.pathname === '/api/admin/generate-codes' && request.method === 'GET') {
+        return await handleAdminGenerateCodes(request, env);
       }
     } catch (err) {
       return jsonResponse({ error: 'Internal error', message: String(err && err.message || err) }, 500);
