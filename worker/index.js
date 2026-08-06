@@ -252,27 +252,6 @@ async function handleOrderStatus(request, env) {
   return jsonResponse({ status: order.status });
 }
 
-// ---------- Cookie helpers ----------
-function parseCookies(request) {
-  const header = request.headers.get('Cookie') || '';
-  const cookies = {};
-  header.split(';').forEach(pair => {
-    const idx = pair.indexOf('=');
-    if (idx > -1) {
-      const k = pair.slice(0, idx).trim();
-      const v = pair.slice(idx + 1).trim();
-      if (k) cookies[k] = decodeURIComponent(v);
-    }
-  });
-  return cookies;
-}
-function deviceCookieHeader(token) {
-  const maxAge = 60 * 60 * 24 * 365 * 2; // 2 years
-  // HttpOnly: JS never needs to read this — the browser attaches it automatically,
-  // which is exactly what makes this robust where localStorage wasn't.
-  return `ketryDevice=${encodeURIComponent(token)}; Max-Age=${maxAge}; Path=/; SameSite=Lax; Secure; HttpOnly`;
-}
-
 // ---------- POST /api/redeem ----------
 function normalizeCode(raw) {
   return (raw || '').trim().toUpperCase().replace(/\s+/g, '');
@@ -286,16 +265,13 @@ async function handleRedeem(request, env) {
   }
 
   const code = normalizeCode(body.code);
+  const deviceToken = (body.deviceToken || '').trim();
+
   if (!code || !/^KETRY-\d{4}-[A-Z]$/.test(code)) {
     return jsonResponse({ ok: false, message: "That code doesn't look right — check the card inside your box." });
   }
-
-  const cookies = parseCookies(request);
-  let deviceToken = cookies['ketryDevice'];
-  let needsSetCookie = false;
   if (!deviceToken) {
-    deviceToken = crypto.randomUUID();
-    needsSetCookie = true;
+    return jsonResponse({ ok: false, message: 'Missing device identifier' }, 400);
   }
 
   const raw = await env.CODES.get(code);
@@ -304,55 +280,19 @@ async function handleRedeem(request, env) {
   }
 
   const record = JSON.parse(raw);
-  let result;
 
   if (record.devices.includes(deviceToken)) {
-    result = { ok: true, message: 'Welcome back!', slotsUsed: record.devices.length, maxDevices: record.maxDevices };
-  } else if (record.devices.length >= record.maxDevices) {
-    result = { ok: false, message: `This code has reached its limit of ${record.maxDevices} family devices. Contact us if you need help.` };
-  } else {
-    record.devices.push(deviceToken);
-    await env.CODES.put(code, JSON.stringify(record));
-    result = { ok: true, message: 'Unlocked!', slotsUsed: record.devices.length, maxDevices: record.maxDevices };
+    return jsonResponse({ ok: true, message: 'Welcome back!', slotsUsed: record.devices.length, maxDevices: record.maxDevices });
   }
 
-  // Keep a reverse index (device -> code) so the AR page can silently check
-  // "is this device already unlocked?" without needing to remember the code text.
-  if (result.ok) {
-    await env.DEVICES.put(deviceToken, JSON.stringify({ code, unlockedAt: Date.now() }));
+  if (record.devices.length >= record.maxDevices) {
+    return jsonResponse({ ok: false, message: `This code has reached its limit of ${record.maxDevices} family devices. Contact us if you need help.` });
   }
 
-  const res = jsonResponse(result);
-  if (needsSetCookie) {
-    res.headers.append('Set-Cookie', deviceCookieHeader(deviceToken));
-  }
-  return res;
-}
+  record.devices.push(deviceToken);
+  await env.CODES.put(code, JSON.stringify(record));
 
-// ---------- GET /api/device-status ----------
-// Called on every AR page load. Uses only the cookie — no client-remembered
-// code text needed at all — to silently check "has this browser already
-// unlocked something?" and skip the code gate if so.
-async function handleDeviceStatus(request, env) {
-  const cookies = parseCookies(request);
-  const deviceToken = cookies['ketryDevice'];
-  if (!deviceToken) {
-    return jsonResponse({ unlocked: false });
-  }
-  const raw = await env.DEVICES.get(deviceToken);
-  if (!raw) {
-    return jsonResponse({ unlocked: false });
-  }
-  const { code } = JSON.parse(raw);
-  const codeRaw = await env.CODES.get(code);
-  if (!codeRaw) {
-    return jsonResponse({ unlocked: false });
-  }
-  const record = JSON.parse(codeRaw);
-  if (!record.devices.includes(deviceToken)) {
-    return jsonResponse({ unlocked: false });
-  }
-  return jsonResponse({ unlocked: true, slotsUsed: record.devices.length, maxDevices: record.maxDevices });
+  return jsonResponse({ ok: true, message: 'Unlocked!', slotsUsed: record.devices.length, maxDevices: record.maxDevices });
 }
 
 // ---------- Router ----------
@@ -372,9 +312,6 @@ export default {
       }
       if (url.pathname === '/api/redeem' && request.method === 'POST') {
         return await handleRedeem(request, env);
-      }
-      if (url.pathname === '/api/device-status' && request.method === 'GET') {
-        return await handleDeviceStatus(request, env);
       }
       if (url.pathname === '/api/admin/generate-codes' && request.method === 'GET') {
         return await handleAdminGenerateCodes(request, env);
