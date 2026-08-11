@@ -331,7 +331,8 @@ async function redeemCode(code){
     });
     return await res.json();
   } catch(e){
-    return { ok: false, message: 'Could not reach the server. Check your connection and try again.' };
+    // FIX: Distinguish a network failure from an invalid code
+    return { ok: false, networkError: true, message: 'Could not reach the server. Check your connection and try again.' };
   }
 }
 
@@ -344,9 +345,6 @@ async function checkCode(){
   
   const result = await redeemCode(input.value);
   
-  btn.disabled = false;
-  btn.textContent = 'Unlock AR';
-  
   if(result.ok){
     const validCode = input.value.trim().toUpperCase();
     currentSessionData.code = validCode;
@@ -355,6 +353,8 @@ async function checkCode(){
     err.textContent = '';
     showAppAfterUnlock(result.slotsUsed, result.maxDevices);
   } else {
+    btn.disabled = false;
+    btn.textContent = 'Unlock AR';
     err.textContent = result.message || 'Something went wrong. Please try again.';
   }
 }
@@ -366,20 +366,39 @@ document.getElementById('code-input').addEventListener('keydown', (e)=>{
 // On load: Safely check if this device already unlocked before
 (function(){
   if(currentSessionData.code){
+    // FIX: Update UI immediately so the user knows they don't need to type anything
+    const btn = document.getElementById('code-submit');
+    const input = document.getElementById('code-input');
+    
+    btn.disabled = true;
+    btn.textContent = 'Restoring session...';
+    input.value = currentSessionData.code; // Show them we remembered it
+    
     redeemCode(currentSessionData.code).then(result=>{
       if(result.ok){
         showAppAfterUnlock(result.slotsUsed, result.maxDevices);
+      } else if (result.networkError) {
+        // FIX: Do NOT delete the code if it's just a network issue!
+        document.getElementById('code-error').textContent = result.message;
+        btn.disabled = false;
+        btn.textContent = 'Try Again';
       } else {
-        // If code was revoked or validation failed, clear storage safely
+        // If code was actively revoked or validation failed on the server, clear storage safely
         try { 
           localStorage.removeItem('ketryCode'); sessionStorage.removeItem('ketryCode');
           document.cookie = "ketryCode=; max-age=0; path=/";
           window.name = JSON.stringify({ token: currentSessionData.token, code: null });
         } catch(e){}
+        
+        input.value = '';
+        document.getElementById('code-error').textContent = 'Session expired or code invalid. Please enter it again.';
+        btn.disabled = false;
+        btn.textContent = 'Unlock AR';
       }
     });
   }
 })();
+
 
 // --- Start Camera button (this wrapper was missing — the actual bug) ---
 
