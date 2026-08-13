@@ -253,164 +253,67 @@ function stopAudio(name){
   if(audioCache[name]){try{audioCache[name].pause();audioCache[name].currentTime=0;}catch(e){}}
 }
 
-// --- Redemption code gate (server-verified, device-limited) ---
-
-// "Super Storage" safely tries 4 different methods to beat strict mobile blockers
-function saveTokenAndCode(token, code) {
-  try { 
-    localStorage.setItem('ketryToken', token); localStorage.setItem('ketryCode', code); 
-    sessionStorage.setItem('ketryToken', token); sessionStorage.setItem('ketryCode', code); 
-  } catch(e){}
-  
-  try { 
-    document.cookie = "ketryToken=" + token + "; max-age=31536000; path=/"; 
-    document.cookie = "ketryCode=" + code + "; max-age=31536000; path=/"; 
-  } catch(e){}
-  
-  // 3. Window Name (Safely JSON encoded to prevent text splitting errors)
-  try { 
-    window.name = JSON.stringify({ token: token, code: code }); 
-  } catch(e){}
-}
-
-function getSavedData() {
-  let data = { token: null, code: null };
-  
-  // Try Local/Session Storage
-  try { data.token = localStorage.getItem('ketryToken') || sessionStorage.getItem('ketryToken'); } catch(e){}
-  try { data.code = localStorage.getItem('ketryCode') || sessionStorage.getItem('ketryCode'); } catch(e){}
-  
-  // Try Cookies
-  if (!data.token || !data.code) {
-    try {
-      const cookies = document.cookie.split(';');
-      cookies.forEach(c => {
-        if (c.trim().startsWith("ketryToken=")) data.token = c.split('=')[1];
-        if (c.trim().startsWith("ketryCode=")) data.code = c.split('=')[1];
-      });
-    } catch(e){}
-  }
-  
-  // Try Window.name (Ultimate fallback using safe JSON parsing)
-  if (!data.token || !data.code) {
-    try {
-      const parsed = JSON.parse(window.name);
-      if (parsed.token) data.token = parsed.token;
-      if (parsed.code) data.code = parsed.code;
-    } catch(e){}
-  }
-  return data;
-}
-
-let currentSessionData = getSavedData();
-
-function getDeviceToken(){
-  if (currentSessionData.token) return currentSessionData.token;
-  
-  let newToken = 'ketry_' + Math.random().toString(36).substr(2, 9) + Date.now();
-  currentSessionData.token = newToken;
-  saveTokenAndCode(newToken, currentSessionData.code || '');
-  return newToken;
-}
-
+// --- Redemption code gate (server-verified, cookie-based device identity) ---
+// No localStorage/sessionStorage involved at all — the browser's own cookie
+// jar (managed automatically by Cloudflare via Set-Cookie) is what remembers
+// this device now, which survives page navigation far more reliably.
 function showAppAfterUnlock(slotsUsed, maxDevices){
   document.getElementById('code-gate').style.display='none';
   document.getElementById('splash').style.display='flex';
   if(slotsUsed && maxDevices){
     document.getElementById('slots-note').textContent = `Family device ${slotsUsed} of ${maxDevices} activated`;
-  } else {
-    document.getElementById('slots-note').textContent = `Device recognized. Welcome back!`;
   }
 }
-
 async function redeemCode(code){
   try {
-    const deviceToken = getDeviceToken();
     const res = await fetch('/api/redeem', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, deviceToken })
+      body: JSON.stringify({ code })
     });
     return await res.json();
   } catch(e){
-    // FIX: Distinguish a network failure from an invalid code
-    return { ok: false, networkError: true, message: 'Could not reach the server. Check your connection and try again.' };
+    return { ok: false, message: 'Could not reach the server. Check your connection and try again.' };
   }
 }
-
 async function checkCode(){
   const input = document.getElementById('code-input');
   const err = document.getElementById('code-error');
   const btn = document.getElementById('code-submit');
   btn.disabled = true;
   btn.textContent = 'Checking...';
-  
   const result = await redeemCode(input.value);
-  
+  btn.disabled = false;
+  btn.textContent = 'Unlock AR';
   if(result.ok){
-    const validCode = input.value.trim().toUpperCase();
-    currentSessionData.code = validCode;
-    saveTokenAndCode(getDeviceToken(), validCode);
-    
     err.textContent = '';
     showAppAfterUnlock(result.slotsUsed, result.maxDevices);
   } else {
-    btn.disabled = false;
-    btn.textContent = 'Unlock AR';
     err.textContent = result.message || 'Something went wrong. Please try again.';
   }
 }
-
 document.getElementById('code-input').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') checkCode();
 });
-
-// On load: Safely check if this device already unlocked before
+// On load: silently ask the server "has this device already unlocked
+// something?" via the cookie — no remembered code text needed client-side.
 (function(){
-  if(currentSessionData.code){
-    const btn = document.getElementById('code-submit');
-    const input = document.getElementById('code-input');
-    
-    btn.disabled = true;
-    btn.textContent = 'Restoring session...';
-    input.value = currentSessionData.code; // Show them we remembered it
-    
-    showAppAfterUnlock();
-  }
+  fetch('/api/device-status', { credentials: 'same-origin' })
+    .then(res => res.json())
+    .then(result => {
+      if(result.unlocked){
+        showAppAfterUnlock(result.slotsUsed, result.maxDevices);
+      }
+    })
+    .catch(()=>{ /* stay on code gate — safest default if this check fails */ });
 })();
 
-
 // --- Start Camera button (this wrapper was missing — the actual bug) ---
-
-  let started=false;
+let started=false;
 function startAR(){
   if(started) return;
   started=true;
-
-  // --- SAFE CODE: Safari Audio Unlock Trick ---
-  try {
-    ANIMALS.forEach(a => {
-      if(!audioCache[a.audio]) {
-        const snd = new Audio(`./assets/audio/${a.audio}.mp3`);
-        snd.muted = true; 
-        snd.loop = true;  
-        
-        const playPromise = snd.play();
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            snd.pause();
-            snd.muted = false; 
-            snd.currentTime = 0;
-          }).catch(err => {});
-        }
-        audioCache[a.audio] = snd;
-      }
-    });
-  } catch(audioErr) {
-    console.warn("Audio unlock skipped.");
-  }
-  // --- END SAFE CODE ---
-
   document.getElementById('splash').style.display='none';
   document.getElementById('loading').style.display='flex';
 
