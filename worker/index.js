@@ -13,7 +13,9 @@
 //   CASHFREE_ENV              ("sandbox" or "production")
 
 const CODE_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I/O, avoid confusion
-const MAX_DEVICES = 3;
+const MAX_DEVICES = 5; // raised from 3 — gives buffer for phones (esp. MIUI/aggressive
+                        // battery optimizers) that periodically clear cookies, causing a
+                        // genuine single customer to appear as multiple "new" devices
 
 function jsonResponse(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
@@ -309,7 +311,7 @@ async function handleRedeem(request, env) {
   if (record.devices.includes(deviceToken)) {
     result = { ok: true, message: 'Welcome back!', slotsUsed: record.devices.length, maxDevices: record.maxDevices };
   } else if (record.devices.length >= record.maxDevices) {
-    result = { ok: false, message: `This code has reached its limit of ${record.maxDevices} family devices. Contact us if you need help.` };
+    result = { ok: false, message: `You've reached this code's limit of ${record.maxDevices} devices. This can happen if your phone occasionally clears its data — it's not a problem! Message us on WhatsApp at +91-8714257407 with your order details and we'll reset it for you in minutes.` };
   } else {
     record.devices.push(deviceToken);
     await env.CODES.put(code, JSON.stringify(record));
