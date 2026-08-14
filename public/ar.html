@@ -288,6 +288,9 @@ async function checkCode(){
   btn.textContent = 'Unlock AR';
   if(result.ok){
     err.textContent = '';
+    // Best-effort convenience only — never used for identity/security,
+    // just saves a re-type if the cookie happens to get cleared later.
+    try { localStorage.setItem('ketryLastCode', input.value.trim().toUpperCase()); } catch(e){}
     showAppAfterUnlock(result.slotsUsed, result.maxDevices);
   } else {
     err.textContent = result.message || 'Something went wrong. Please try again.';
@@ -304,6 +307,14 @@ document.getElementById('code-input').addEventListener('keydown', (e)=>{
     .then(result => {
       if(result.unlocked){
         showAppAfterUnlock(result.slotsUsed, result.maxDevices);
+      } else {
+        // Cookie check failed (e.g. cleared by the phone's OS) — if we still
+        // have a locally-saved code, prefill it so the customer only has to
+        // tap "Unlock" once instead of digging out the box again.
+        try {
+          const lastCode = localStorage.getItem('ketryLastCode');
+          if(lastCode) document.getElementById('code-input').value = lastCode;
+        } catch(e){}
       }
     })
     .catch(()=>{ /* stay on code gate — safest default if this check fails */ });
