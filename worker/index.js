@@ -286,8 +286,8 @@ async function handleRedeem(request, env) {
   }
 
   if (record.devices.length >= record.maxDevices) {
-    return jsonResponse({ ok: false, message: `This code has reached its limit of ${record.maxDevices} family devices. Contact us if you need help.` });
-  }
+  return jsonResponse({ ok: false, message: `You've reached this code's limit of ${record.maxDevices} devices. This can happen if your phone occasionally clears its data — it's not a problem! Message us on WhatsApp at +91-8714257407 with your order details and we'll reset it for you in minutes.` });
+}
 
   record.devices.push(deviceToken);
   await env.CODES.put(code, JSON.stringify(record));
