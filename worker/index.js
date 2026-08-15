@@ -270,9 +270,9 @@ function parseCookies(request) {
 }
 function deviceCookieHeader(token) {
   const maxAge = 60 * 60 * 24 * 365 * 2; // 2 years
-  // HttpOnly: JS never needs to read this — the browser attaches it automatically,
-  // which is exactly what makes this robust where localStorage wasn't.
-  return `ketryDevice=${encodeURIComponent(token)}; Max-Age=${maxAge}; Path=/; SameSite=Lax; Secure; HttpOnly`;
+  // TEMPORARY: HttpOnly removed so we can visibly debug this cookie on-screen
+  // on mobile without needing USB/remote debugging. Re-add HttpOnly once confirmed working.
+  return `ketryDevice=${encodeURIComponent(token)}; Max-Age=${maxAge}; Path=/; SameSite=Lax; Secure`;
 }
 
 // ---------- POST /api/redeem ----------
@@ -311,7 +311,7 @@ async function handleRedeem(request, env) {
   if (record.devices.includes(deviceToken)) {
     result = { ok: true, message: 'Welcome back!', slotsUsed: record.devices.length, maxDevices: record.maxDevices };
   } else if (record.devices.length >= record.maxDevices) {
-    result = { ok: false, message: `You've reached this code's limit of ${record.maxDevices} devices. This can happen if your phone occasionally clears its data — it's not a problem! Message us on WhatsApp at +91-8714257407 with your order details and we'll reset it for you in minutes.` };
+    result = { ok: false, message: `You've reached this code's limit of ${record.maxDevices} devices. This can happen if your phone occasionally clears its data — it's not a problem! Message us on WhatsApp at +91-XXXXXXXXXX with your order details and we'll reset it for you in minutes.` };
   } else {
     record.devices.push(deviceToken);
     await env.CODES.put(code, JSON.stringify(record));
