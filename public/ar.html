@@ -118,6 +118,7 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
   <button id="code-submit" onclick="checkCode()">Unlock AR</button>
   <div id="code-error"></div>
   <div id="code-help">Don't have a code? Codes come with every genuine Ketry flashcard set — <a href="./index.html">get yours here</a>.</div>
+  <p id="cookie-debug-gate" style="font-size:9px;color:#666;margin-top:24px;word-break:break-all;"></p>
 </div>
 
 <div id="splash">
@@ -135,6 +136,7 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
   <button id="start-btn" onclick="startAR()">📷 Start Camera</button>
   <p id="start-note">Allow camera access when prompted</p>
   <p id="slots-note" style="font-size:11px;color:#555;margin-top:8px;"></p>
+  <p id="cookie-debug" style="font-size:9px;color:#444;margin-top:20px;word-break:break-all;padding:0 20px;"></p>
 </div>
 
 <div id="loading">
@@ -302,9 +304,19 @@ document.getElementById('code-input').addEventListener('keydown', (e)=>{
 // On load: silently ask the server "has this device already unlocked
 // something?" via the cookie — no remembered code text needed client-side.
 (function(){
+  const rawCookie = document.cookie || '(empty — no cookies at all on this page load)';
+  const debugMsg = 'DEBUG document.cookie: ' + rawCookie;
+  const gateDbg = document.getElementById('cookie-debug-gate');
+  const splashDbg = document.getElementById('cookie-debug');
+  if(gateDbg) gateDbg.textContent = debugMsg;
+  if(splashDbg) splashDbg.textContent = debugMsg;
+
   fetch('/api/device-status', { credentials: 'same-origin' })
     .then(res => res.json())
     .then(result => {
+      const fullMsg = debugMsg + ' | /api/device-status response: ' + JSON.stringify(result);
+      if(gateDbg) gateDbg.textContent = fullMsg;
+      if(splashDbg) splashDbg.textContent = fullMsg;
       if(result.unlocked){
         showAppAfterUnlock(result.slotsUsed, result.maxDevices);
       } else {
