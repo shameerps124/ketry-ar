@@ -129,6 +129,16 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
   <img src="./assets/loading-logo.png" alt="Ketry"/>
   <h2>Enter Your Ketry Code</h2>
   <p>Find your unique code printed inside your Ketry flashcard box, then enter it below to unlock the AR experience.</p>
+
+  <!-- NEW: Install button right on the login screen! -->
+  <button id="install-app-btn-gate" style="display:none; background:#EFA52A; color:#000; border:none; padding:12px 30px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-bottom:20px; width:100%; max-width:260px; box-shadow:0 4px 15px rgba(239,165,42,0.4);">📲 Install App to Save Code</button>
+
+  <input id="code-input" type="text" placeholder="KETRY-1234-A" maxlength="14" autocomplete="off" autocapitalize="characters"/>
+  <button id="code-submit" onclick="checkCode()">Unlock AR</button>
+  <div id="code-error"></div>
+  <div id="code-help">Don't have a code? Codes come with every genuine Ketry flashcard set — <a href="./index.html">get yours here</a>.</div>
+</div>
+
   <input id="code-input" type="text" placeholder="KETRY-1234-A" maxlength="14" autocomplete="off" autocapitalize="characters"/>
   <button id="code-submit" onclick="checkCode()">Unlock AR</button>
   <div id="code-error"></div>
@@ -378,49 +388,58 @@ function checkInAppBrowser() {
 }
 checkInAppBrowser();
 
-// 2. THE PWA INSTALL TRIGGER & iOS SUPPORT
+// // 2. THE PWA INSTALL TRIGGER & iOS SUPPORT
 let deferredPrompt;
-const installBtn = document.getElementById('install-app-btn');
+const installBtnSplash = document.getElementById('install-app-btn');
+const installBtnGate = document.getElementById('install-app-btn-gate');
 
-// Detect if the user is on an iPhone/iPad
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-// Detect if the app is already installed and running on the home screen
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+function showInstallBtn(text, clickHandler) {
+  if (installBtnSplash) {
+    installBtnSplash.style.display = 'block';
+    if (text) installBtnSplash.textContent = text;
+    if (clickHandler) installBtnSplash.onclick = clickHandler;
+  }
+  if (installBtnGate) {
+    installBtnGate.style.display = 'block';
+    if (text) installBtnGate.textContent = text;
+    if (clickHandler) installBtnGate.onclick = clickHandler;
+  }
+}
+
+function hideInstallBtn() {
+  if (installBtnSplash) installBtnSplash.style.display = 'none';
+  if (installBtnGate) installBtnGate.style.display = 'none';
+}
 
 if (!isStandalone) {
   if (isIOS) {
-    // Apple/iOS workaround: Show button with manual instructions
-    installBtn.style.display = 'block';
-    installBtn.textContent = '📲 How to Install (iPhone)';
-    installBtn.onclick = () => {
+    showInstallBtn('📲 How to Install (iPhone)', () => {
       alert("To save your code permanently on iPhone:\n\n1. Tap the 'Share' icon at the bottom of Safari (the square with an up arrow).\n2. Scroll down and tap 'Add to Home Screen'.");
-    };
+    });
   } else {
-    // Android/Chrome logic
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      installBtn.style.display = 'block';
-      installBtn.textContent = '📲 Install Ketry App';
+      showInstallBtn('📲 Install App to Save Code');
     });
 
-    installBtn.addEventListener('click', async () => {
+    const handleInstall = async () => {
       if (deferredPrompt) {
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
-          installBtn.style.display = 'none';
+          hideInstallBtn();
         }
         deferredPrompt = null;
       } else {
-        // Fallback if the manifest didn't load properly but they clicked anyway
         alert("To install Ketry:\n\nTap your browser's menu (the 3 dots ⋮) and select 'Install app' or 'Add to Home screen'.");
       }
-    });
-    
-    // Always show the button as a fallback for strict Android browsers
-    installBtn.style.display = 'block';
+    };
+
+    showInstallBtn('📲 Install App to Save Code', handleInstall);
   }
 }
 
