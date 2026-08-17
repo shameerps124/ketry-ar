@@ -355,12 +355,21 @@ async function redeemCode(code){
 
 function checkInAppBrowser() {
   const ua = navigator.userAgent || navigator.vendor || window.opera;
-  // Detects Facebook, Instagram, and common in-app WebViews
-  if ((ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1) || (ua.indexOf("wv") > -1)) {
-    const warning = document.createElement('div');
-    warning.style.cssText = "background:#EFA52A; color:#000; padding:10px; text-align:center; font-size:13px; font-weight:bold; position:fixed; top:0; width:100%; z-index:9999;";
-    warning.innerHTML = "⚠️ To save your code, tap the 3 dots (⋮) and select 'Open in Chrome' or 'Open in Safari'.";
-    document.body.prepend(warning);
+  // Broadly detects Instagram, Facebook, TikTok, Android WebViews, and iOS generic WebViews
+  const isTemporaryBrowser = /(FBAN|FBAV|Instagram|Snapchat|TikTok|wv|iPhone.*AppleWebKit(?!.*Safari))/i.test(ua);
+
+  if (isTemporaryBrowser) {
+    const gate = document.getElementById('code-gate');
+    gate.innerHTML = `
+      <img src="./assets/loading-logo.png" alt="Ketry" style="width:64px;margin-bottom:20px;"/>
+      <h2 style="color:#EFA52A;font-size:22px;margin-bottom:8px;">Wait! Don't lose your code</h2>
+      <p style="font-size:14px;color:#ccc;margin-bottom:24px;max-width:280px;line-height:1.5;">
+        You are using a temporary QR scanner browser. If you enter your code here, your phone will erase it as soon as you close the app.
+      </p>
+      <div style="background:#1D9E75;color:#fff;padding:16px;border-radius:10px;max-width:280px;font-weight:600;line-height:1.5;">
+        To save your code permanently, tap the menu dots (⋮ or ⋯) in the corner of your screen and select <br/><br/>"Open in Chrome" or "Open in Safari".
+      </div>
+    `;
   }
 }
 checkInAppBrowser();
