@@ -378,25 +378,51 @@ function checkInAppBrowser() {
 }
 checkInAppBrowser();
 
-// 2. THE PWA INSTALL TRIGGER: Forces the Home Screen prompt
+// 2. THE PWA INSTALL TRIGGER & iOS SUPPORT
 let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  // Show the custom install button if the browser allows PWA installation
-  document.getElementById('install-app-btn').style.display = 'block';
-});
+const installBtn = document.getElementById('install-app-btn');
 
-document.getElementById('install-app-btn').addEventListener('click', async () => {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      document.getElementById('install-app-btn').style.display = 'none';
-    }
-    deferredPrompt = null;
+// Detect if the user is on an iPhone/iPad
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+// Detect if the app is already installed and running on the home screen
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+if (!isStandalone) {
+  if (isIOS) {
+    // Apple/iOS workaround: Show button with manual instructions
+    installBtn.style.display = 'block';
+    installBtn.textContent = '📲 How to Install (iPhone)';
+    installBtn.onclick = () => {
+      alert("To save your code permanently on iPhone:\n\n1. Tap the 'Share' icon at the bottom of Safari (the square with an up arrow).\n2. Scroll down and tap 'Add to Home Screen'.");
+    };
+  } else {
+    // Android/Chrome logic
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = 'block';
+      installBtn.textContent = '📲 Install Ketry App';
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          installBtn.style.display = 'none';
+        }
+        deferredPrompt = null;
+      } else {
+        // Fallback if the manifest didn't load properly but they clicked anyway
+        alert("To install Ketry:\n\nTap your browser's menu (the 3 dots ⋮) and select 'Install app' or 'Add to Home screen'.");
+      }
+    });
+    
+    // Always show the button as a fallback for strict Android browsers
+    installBtn.style.display = 'block';
   }
-});
+}
 
 async function checkCode(){
   const input = document.getElementById('code-input');
