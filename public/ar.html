@@ -140,6 +140,10 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
   <img src="./assets/loading-logo.png" id="splash-logo" alt="Ketry"/>
   <h1>Point. Scan.<br/><span>Watch it come alive.</span></h1>
   <p>Hold any Ketry animal card steady in front of your camera.</p>
+  
+  <!-- NEW INSTALL BUTTON -->
+  <button id="install-app-btn" style="display:none; background:#EFA52A; color:#000; border:none; padding:12px 30px; border-radius:50px; font-size:15px; font-weight:700; cursor:pointer; margin-bottom:20px; box-shadow:0 4px 15px rgba(239,165,42,0.4);">📲 Install Ketry App</button>
+
   <div class="splash-cards">
     <div class="splash-card" style="background:#4ECDC4">🐄</div>
     <div class="splash-card" style="background:#EFA52A">🦊</div>
@@ -353,9 +357,9 @@ async function redeemCode(code){
   }
 }
 
+// 1. THE HARD BLOCK: Prevents login in temporary browsers
 function checkInAppBrowser() {
   const ua = navigator.userAgent || navigator.vendor || window.opera;
-  // Broadly detects Instagram, Facebook, TikTok, Android WebViews, and iOS generic WebViews
   const isTemporaryBrowser = /(FBAN|FBAV|Instagram|Snapchat|TikTok|wv|iPhone.*AppleWebKit(?!.*Safari))/i.test(ua);
 
   if (isTemporaryBrowser) {
@@ -364,7 +368,7 @@ function checkInAppBrowser() {
       <img src="./assets/loading-logo.png" alt="Ketry" style="width:64px;margin-bottom:20px;"/>
       <h2 style="color:#EFA52A;font-size:22px;margin-bottom:8px;">Wait! Don't lose your code</h2>
       <p style="font-size:14px;color:#ccc;margin-bottom:24px;max-width:280px;line-height:1.5;">
-        You are using a temporary QR scanner browser. If you enter your code here, your phone will erase it as soon as you close the app.
+        You are using a temporary QR scanner. Your phone will erase your code as soon as you close this app!
       </p>
       <div style="background:#1D9E75;color:#fff;padding:16px;border-radius:10px;max-width:280px;font-weight:600;line-height:1.5;">
         To save your code permanently, tap the menu dots (⋮ or ⋯) in the corner of your screen and select <br/><br/>"Open in Chrome" or "Open in Safari".
@@ -373,6 +377,26 @@ function checkInAppBrowser() {
   }
 }
 checkInAppBrowser();
+
+// 2. THE PWA INSTALL TRIGGER: Forces the Home Screen prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show the custom install button if the browser allows PWA installation
+  document.getElementById('install-app-btn').style.display = 'block';
+});
+
+document.getElementById('install-app-btn').addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      document.getElementById('install-app-btn').style.display = 'none';
+    }
+    deferredPrompt = null;
+  }
+});
 
 async function checkCode(){
   const input = document.getElementById('code-input');
