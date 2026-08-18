@@ -4,6 +4,22 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Ketry — Phygital AR Animal Flashcards</title>
+
+<!-- PWA Manifest & Theme Color -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1D9E75">
+
+<!-- Register Service Worker -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
+        console.log('Service Worker registration failed: ', err);
+      });
+    });
+  }
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
 <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
@@ -529,8 +545,12 @@ async function proceedToPayment(){
       return;
     }
 
-    // Remember the order id so order-status.html can look it up after redirect
-    try { sessionStorage.setItem('ketryLastOrderId', data.order_id); } catch(e){ /* storage blocked — harmless, order_id is also passed via return_url */ }
+    // Safely try to remember the order id (ignore if browser blocks it)
+    try {
+      sessionStorage.setItem('ketryLastOrderId', data.order_id);
+    } catch(storageErr) {
+      console.warn("Session storage blocked by browser settings.");
+    }
 
     const cashfree = Cashfree({ mode: 'sandbox' }); // switch to 'production' once CASHFREE_ENV is production too
     cashfree.checkout({

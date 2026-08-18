@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Ketry AR — Animal Flashcards</title>
 
+<!-- PWA Manifest & Theme Color -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1D9E75">
+
+<!-- Register Service Worker -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
+        console.log('Service Worker registration failed: ', err);
+      });
+    });
+  }
+</script>
+
 <!-- Replace the 1.5.0 link with this 1.4.2 link -->
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -114,11 +129,15 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
   <img src="./assets/loading-logo.png" alt="Ketry"/>
   <h2>Enter Your Ketry Code</h2>
   <p>Find your unique code printed inside your Ketry flashcard box, then enter it below to unlock the AR experience.</p>
+
+  <!-- The one and only Install Button -->
+  <button id="install-app-btn-gate" style="display:none; background:#EFA52A; color:#000; border:none; padding:12px 30px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-bottom:20px; width:100%; max-width:260px; box-shadow:0 4px 15px rgba(239,165,42,0.4);">📲 Install App to Save Code</button>
+
+  <!-- The one and only Login Input -->
   <input id="code-input" type="text" placeholder="KETRY-1234-A" maxlength="14" autocomplete="off" autocapitalize="characters"/>
   <button id="code-submit" onclick="checkCode()">Unlock AR</button>
   <div id="code-error"></div>
   <div id="code-help">Don't have a code? Codes come with every genuine Ketry flashcard set — <a href="./index.html">get yours here</a>.</div>
-  <p id="cookie-debug-gate" style="font-size:9px;color:#666;margin-top:24px;word-break:break-all;"></p>
 </div>
 
 <div id="splash">
@@ -126,6 +145,10 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
   <img src="./assets/loading-logo.png" id="splash-logo" alt="Ketry"/>
   <h1>Point. Scan.<br/><span>Watch it come alive.</span></h1>
   <p>Hold any Ketry animal card steady in front of your camera.</p>
+  
+  <!-- NEW INSTALL BUTTON -->
+  <button id="install-app-btn" style="display:none; background:#EFA52A; color:#000; border:none; padding:12px 30px; border-radius:50px; font-size:15px; font-weight:700; cursor:pointer; margin-bottom:20px; box-shadow:0 4px 15px rgba(239,165,42,0.4);">📲 Install Ketry App</button>
+
   <div class="splash-cards">
     <div class="splash-card" style="background:#4ECDC4">🐄</div>
     <div class="splash-card" style="background:#EFA52A">🦊</div>
@@ -136,7 +159,6 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
   <button id="start-btn" onclick="startAR()">📷 Start Camera</button>
   <p id="start-note">Allow camera access when prompted</p>
   <p id="slots-note" style="font-size:11px;color:#555;margin-top:8px;"></p>
-  <p id="cookie-debug" style="font-size:9px;color:#444;margin-top:20px;word-break:break-all;padding:0 20px;"></p>
 </div>
 
 <div id="loading">
@@ -255,96 +277,240 @@ function stopAudio(name){
   if(audioCache[name]){try{audioCache[name].pause();audioCache[name].currentTime=0;}catch(e){}}
 }
 
-// --- Redemption code gate (server-verified, cookie-based device identity) ---
-// No localStorage/sessionStorage involved at all — the browser's own cookie
-// jar (managed automatically by Cloudflare via Set-Cookie) is what remembers
-// this device now, which survives page navigation far more reliably.
+// --- Redemption code gate (server-verified, device-limited) ---
+
+// "Super Storage" safely tries 4 different methods to beat strict mobile blockers
+function saveTokenAndCode(token, code) {
+  try { 
+    localStorage.setItem('ketryToken', token); localStorage.setItem('ketryCode', code); 
+    sessionStorage.setItem('ketryToken', token); sessionStorage.setItem('ketryCode', code); 
+  } catch(e){}
+  
+  try { 
+    document.cookie = "ketryToken=" + token + "; max-age=31536000; path=/"; 
+    document.cookie = "ketryCode=" + code + "; max-age=31536000; path=/"; 
+  } catch(e){}
+  
+  // 3. Window Name (Safely JSON encoded to prevent text splitting errors)
+  try { 
+    window.name = JSON.stringify({ token: token, code: code }); 
+  } catch(e){}
+}
+
+function getSavedData() {
+  let data = { token: null, code: null };
+  
+  // Try Local/Session Storage
+  try { data.token = localStorage.getItem('ketryToken') || sessionStorage.getItem('ketryToken'); } catch(e){}
+  try { data.code = localStorage.getItem('ketryCode') || sessionStorage.getItem('ketryCode'); } catch(e){}
+  
+  // Try Cookies
+  if (!data.token || !data.code) {
+    try {
+      const cookies = document.cookie.split(';');
+      cookies.forEach(c => {
+        if (c.trim().startsWith("ketryToken=")) data.token = c.split('=')[1];
+        if (c.trim().startsWith("ketryCode=")) data.code = c.split('=')[1];
+      });
+    } catch(e){}
+  }
+  
+  // Try Window.name (Ultimate fallback using safe JSON parsing)
+  if (!data.token || !data.code) {
+    try {
+      const parsed = JSON.parse(window.name);
+      if (parsed.token) data.token = parsed.token;
+      if (parsed.code) data.code = parsed.code;
+    } catch(e){}
+  }
+  return data;
+}
+
+let currentSessionData = getSavedData();
+
+function getDeviceToken(){
+  if (currentSessionData.token) return currentSessionData.token;
+  
+  let newToken = 'ketry_' + Math.random().toString(36).substr(2, 9) + Date.now();
+  currentSessionData.token = newToken;
+  saveTokenAndCode(newToken, currentSessionData.code || '');
+  return newToken;
+}
+
 function showAppAfterUnlock(slotsUsed, maxDevices){
   document.getElementById('code-gate').style.display='none';
   document.getElementById('splash').style.display='flex';
   if(slotsUsed && maxDevices){
     document.getElementById('slots-note').textContent = `Family device ${slotsUsed} of ${maxDevices} activated`;
+  } else {
+    document.getElementById('slots-note').textContent = `Device recognized. Welcome back!`;
   }
 }
+
 async function redeemCode(code){
   try {
+    const deviceToken = getDeviceToken();
     const res = await fetch('/api/redeem', {
       method: 'POST',
-      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code })
+      body: JSON.stringify({ code, deviceToken })
     });
     return await res.json();
   } catch(e){
-    return { ok: false, message: 'Could not reach the server. Check your connection and try again.' };
+    // FIX: Distinguish a network failure from an invalid code
+    return { ok: false, networkError: true, message: 'Could not reach the server. Check your connection and try again.' };
   }
 }
+
+// 1. THE HARD BLOCK: Prevents login in temporary browsers
+function checkInAppBrowser() {
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  const isTemporaryBrowser = /(FBAN|FBAV|Instagram|Snapchat|TikTok|wv|iPhone.*AppleWebKit(?!.*Safari))/i.test(ua);
+
+  if (isTemporaryBrowser) {
+    const gate = document.getElementById('code-gate');
+    gate.innerHTML = `
+      <img src="./assets/loading-logo.png" alt="Ketry" style="width:64px;margin-bottom:20px;"/>
+      <h2 style="color:#EFA52A;font-size:22px;margin-bottom:8px;">Wait! Don't lose your code</h2>
+      <p style="font-size:14px;color:#ccc;margin-bottom:24px;max-width:280px;line-height:1.5;">
+        You are using a temporary QR scanner. Your phone will erase your code as soon as you close this app!
+      </p>
+      <div style="background:#1D9E75;color:#fff;padding:16px;border-radius:10px;max-width:280px;font-weight:600;line-height:1.5;">
+        To save your code permanently, tap the menu dots (⋮ or ⋯) in the corner of your screen and select <br/><br/>"Open in Chrome" or "Open in Safari".
+      </div>
+    `;
+  }
+}
+checkInAppBrowser();
+
+// // 2. THE PWA INSTALL TRIGGER & iOS SUPPORT
+let deferredPrompt;
+const installBtnSplash = document.getElementById('install-app-btn');
+const installBtnGate = document.getElementById('install-app-btn-gate');
+
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+function showInstallBtn(text, clickHandler) {
+  if (installBtnSplash) {
+    installBtnSplash.style.display = 'block';
+    if (text) installBtnSplash.textContent = text;
+    if (clickHandler) installBtnSplash.onclick = clickHandler;
+  }
+  if (installBtnGate) {
+    installBtnGate.style.display = 'block';
+    if (text) installBtnGate.textContent = text;
+    if (clickHandler) installBtnGate.onclick = clickHandler;
+  }
+}
+
+function hideInstallBtn() {
+  if (installBtnSplash) installBtnSplash.style.display = 'none';
+  if (installBtnGate) installBtnGate.style.display = 'none';
+}
+
+if (!isStandalone) {
+  if (isIOS) {
+    showInstallBtn('📲 How to Install (iPhone)', () => {
+      alert("To save your code permanently on iPhone:\n\n1. Tap the 'Share' icon at the bottom of Safari (the square with an up arrow).\n2. Scroll down and tap 'Add to Home Screen'.");
+    });
+  } else {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      showInstallBtn('📲 Install App to Save Code');
+    });
+
+    const handleInstall = async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          hideInstallBtn();
+        }
+        deferredPrompt = null;
+      } else {
+        alert("To install Ketry:\n\nTap your browser's menu (the 3 dots ⋮) and select 'Install app' or 'Add to Home screen'.");
+      }
+    };
+
+    showInstallBtn('📲 Install App to Save Code', handleInstall);
+  }
+}
+
 async function checkCode(){
   const input = document.getElementById('code-input');
   const err = document.getElementById('code-error');
   const btn = document.getElementById('code-submit');
   btn.disabled = true;
   btn.textContent = 'Checking...';
+  
   const result = await redeemCode(input.value);
-  btn.disabled = false;
-  btn.textContent = 'Unlock AR';
-
-  // Show the cookie state RIGHT NOW, immediately after the redeem response —
-  // this tells us definitively whether Set-Cookie actually took effect.
-  const afterMsg = 'AFTER REDEEM — document.cookie: ' + (document.cookie || '(still empty!)');
-  const gateDbg = document.getElementById('cookie-debug-gate');
-  const splashDbg = document.getElementById('cookie-debug');
-  if(gateDbg) gateDbg.textContent = afterMsg;
-
+  
   if(result.ok){
+    const validCode = input.value.trim().toUpperCase();
+    currentSessionData.code = validCode;
+    saveTokenAndCode(getDeviceToken(), validCode);
+    
     err.textContent = '';
-    try { localStorage.setItem('ketryLastCode', input.value.trim().toUpperCase()); } catch(e){}
     showAppAfterUnlock(result.slotsUsed, result.maxDevices);
-    // showAppAfterUnlock switches to the splash screen — make sure its debug line shows this too
-    if(splashDbg) splashDbg.textContent = afterMsg;
   } else {
+    btn.disabled = false;
+    btn.textContent = 'Unlock AR';
     err.textContent = result.message || 'Something went wrong. Please try again.';
   }
 }
+
 document.getElementById('code-input').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') checkCode();
 });
-// On load: silently ask the server "has this device already unlocked
-// something?" via the cookie — no remembered code text needed client-side.
-(function(){
-  const rawCookie = document.cookie || '(empty — no cookies at all on this page load)';
-  const debugMsg = 'DEBUG document.cookie: ' + rawCookie;
-  const gateDbg = document.getElementById('cookie-debug-gate');
-  const splashDbg = document.getElementById('cookie-debug');
-  if(gateDbg) gateDbg.textContent = debugMsg;
-  if(splashDbg) splashDbg.textContent = debugMsg;
 
-  fetch('/api/device-status', { credentials: 'same-origin' })
-    .then(res => res.json())
-    .then(result => {
-      const fullMsg = debugMsg + ' | /api/device-status response: ' + JSON.stringify(result);
-      if(gateDbg) gateDbg.textContent = fullMsg;
-      if(splashDbg) splashDbg.textContent = fullMsg;
-      if(result.unlocked){
-        showAppAfterUnlock(result.slotsUsed, result.maxDevices);
-      } else {
-        // Cookie check failed (e.g. cleared by the phone's OS) — if we still
-        // have a locally-saved code, prefill it so the customer only has to
-        // tap "Unlock" once instead of digging out the box again.
-        try {
-          const lastCode = localStorage.getItem('ketryLastCode');
-          if(lastCode) document.getElementById('code-input').value = lastCode;
-        } catch(e){}
-      }
-    })
-    .catch(()=>{ /* stay on code gate — safest default if this check fails */ });
+// On load: Safely check if this device already unlocked before
+(function(){
+  if(currentSessionData.code){
+    const btn = document.getElementById('code-submit');
+    const input = document.getElementById('code-input');
+    
+    btn.disabled = true;
+    btn.textContent = 'Restoring session...';
+    input.value = currentSessionData.code; // Show them we remembered it
+    
+    showAppAfterUnlock();
+  }
 })();
 
+
 // --- Start Camera button (this wrapper was missing — the actual bug) ---
-let started=false;
+
+  let started=false;
 function startAR(){
   if(started) return;
   started=true;
+
+  // --- SAFE CODE: Safari Audio Unlock Trick ---
+  try {
+    ANIMALS.forEach(a => {
+      if(!audioCache[a.audio]) {
+        const snd = new Audio(`./assets/audio/${a.audio}.mp3`);
+        snd.muted = true; 
+        snd.loop = true;  
+        
+        const playPromise = snd.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            snd.pause();
+            snd.muted = false; 
+            snd.currentTime = 0;
+          }).catch(err => {});
+        }
+        audioCache[a.audio] = snd;
+      }
+    });
+  } catch(audioErr) {
+    console.warn("Audio unlock skipped.");
+  }
+  // --- END SAFE CODE ---
+
   document.getElementById('splash').style.display='none';
   document.getElementById('loading').style.display='flex';
 
