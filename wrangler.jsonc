@@ -12,9 +12,12 @@
       "id": "d70ca9a5aa46465a9e2dec90f838c2b2"
     },
     {
+  // ...
+  "kv_namespaces": [
+    {
       "binding": "CODES",
-      "id": "7c1c29098f9c40e6a084387cb0bddff9"
+      "id": "cec6ebca217b4cb8867e95b08b7d3dc9"
     }
-  ]
-  }
+  ],
+  // ...
 }
