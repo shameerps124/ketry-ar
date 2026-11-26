@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ketry — Phygital AR Animal Flashcards</title>
+
+<!-- PWA Manifest & Theme Color -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1D9E75">
+
+<!-- Register Service Worker -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
+        console.log('Service Worker registration failed: ', err);
+      });
+    });
+  }
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --red:#C0392B;
+  --red-light:#E8574A;
+  --pink:#E8A0A0;
+  --cream:#FFF9F5;
+  --dark:#1A1A1A;
+  --mid:#4A4A4A;
+  --soft:#888;
+  --border:#EEE;
+  --card-bg:#FFF;
+  --green:#1D9E75;
+  --amber:#EFA52A;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'Nunito Sans',sans-serif;background:var(--cream);color:var(--dark);overflow-x:hidden;}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(255,249,245,0.95);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  padding:0 5%;height:64px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.nav-logo img{height:36px;object-fit:contain;}
+.nav-links{display:flex;align-items:center;gap:24px;}
+.nav-links a{font-size:14px;font-weight:600;color:var(--mid);text-decoration:none;transition:color .2s;}
+.nav-links a:hover{color:var(--red);}
+.nav-cta{
+  background:var(--red);color:#fff;padding:9px 20px;border-radius:50px;
+  font-size:14px;font-weight:700;text-decoration:none;
+  transition:background .2s,transform .15s;
+}
+.nav-cta:hover{background:var(--red-light);transform:translateY(-1px);}
+
+/* HERO */
+.hero{
+  min-height:82vh;padding:130px 5% 60px;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  background:linear-gradient(135deg,#fff 0%,var(--cream) 60%,#fde8e8 100%);
+}
+.hero-content{max-width:680px;}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  background:#fde8e8;color:var(--red);border-radius:50px;
+  padding:6px 14px;font-size:12px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;margin-bottom:20px;
+}
+.hero-tag span{font-size:15px;}
+.hero h1{
+  font-family:'Fredoka',sans-serif;font-weight:900;
+  font-size:clamp(2.2rem,4.5vw,3.5rem);
+  line-height:1.1;color:var(--dark);margin-bottom:18px;
+}
+.hero h1 em{font-style:normal;color:var(--red);}
+.hero p{
+  font-size:17px;color:var(--mid);line-height:1.7;
+  max-width:520px;margin:0 auto 32px;
+}
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+.btn-primary{
+  background:var(--red);color:#fff;padding:16px 34px;border-radius:50px;
+  font-size:16px;font-weight:700;text-decoration:none;
+  transition:background .2s,transform .15s;display:inline-flex;align-items:center;gap:8px;
+  box-shadow:0 10px 30px rgba(192,57,43,0.25);
+}
+.btn-primary:hover{background:var(--red-light);transform:translateY(-2px);}
+.hero-stats{
+  display:flex;gap:36px;margin-top:40px;flex-wrap:wrap;justify-content:center;
+}
+.stat{text-align:center;}
+.stat-num{font-family:'Fredoka',sans-serif;font-size:26px;font-weight:700;color:var(--red);}
+.stat-label{font-size:12px;color:var(--soft);font-weight:600;}
+
+/* HOW IT WORKS — VIDEO STEPS (the new hero signature: real proof, not stock art) */
+.how-video{background:#fff;}
+.video-steps{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:48px;
+}
+.video-step{text-align:left;}
+.video-frame{
+  position:relative;aspect-ratio:9/16;max-height:420px;border-radius:20px;overflow:hidden;
+  background:var(--dark);box-shadow:0 16px 40px rgba(0,0,0,0.14);margin-bottom:18px;
+}
+.video-frame video{width:100%;height:100%;object-fit:cover;display:block;}
+.video-frame .video-fallback{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;background:linear-gradient(160deg,#2a2a2a,#151515);color:#fff;
+}
+.video-frame .video-fallback .icon{font-size:34px;opacity:.8;}
+.video-frame .video-fallback span{font-size:12px;color:#aaa;font-weight:600;}
+.step-num-badge{
+  width:34px;height:34px;border-radius:10px;background:var(--red);color:#fff;
+  font-family:'Fredoka',sans-serif;font-weight:700;font-size:15px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:12px;
+}
+.video-step h3{font-family:'Fredoka',sans-serif;font-weight:600;font-size:17px;margin-bottom:6px;}
+.video-step p{font-size:13.5px;color:var(--soft);line-height:1.6;}
+@media (max-width:820px){
+  .video-steps{grid-template-columns:1fr;max-width:340px;margin-left:auto;margin-right:auto;}
+}
+
+/* SECTION COMMON */
+section{padding:80px 5%;}
+.section-tag{
+  display:inline-block;background:#fde8e8;color:var(--red);
+  border-radius:50px;padding:4px 14px;font-size:11px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;
+}
+.section-title{
+  font-family:'Fredoka',sans-serif;font-weight:900;
+  font-size:clamp(1.6rem,3vw,2.4rem);color:var(--dark);margin-bottom:10px;
+}
+.section-sub{font-size:15px;color:var(--soft);max-width:520px;line-height:1.65;}
+
+/* SHOP */
+.shop{background:var(--cream);}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px;margin-top:36px;}
+.animal-card{
+  background:#fff;border-radius:16px;padding:20px 12px 16px;
+  text-align:center;border:1.5px solid var(--border);
+  transition:transform .15s,border-color .15s,box-shadow .15s;
+  cursor:default;
+}
+.animal-card:hover{transform:translateY(-3px);border-color:var(--pink);box-shadow:0 8px 24px rgba(192,57,43,.08);}
+.animal-card .em{font-size:40px;margin-bottom:8px;display:block;}
+.animal-card .name{font-family:'Fredoka',sans-serif;font-weight:800;font-size:13px;color:var(--dark);}
+.animal-card .ml{font-size:11px;color:var(--soft);margin-top:2px;}
+
+/* PRODUCT BOX */
+.product-box{
+  margin-top:48px;background:#fff;border-radius:24px;
+  border:1.5px solid var(--border);overflow:hidden;
+  display:grid;grid-template-columns:1fr 1fr;
+}
+.product-visual{
+  background:linear-gradient(135deg,#fde8e8,#fff0e8);
+  display:flex;align-items:center;justify-content:center;
+  padding:48px 32px;min-height:300px;
+}
+.product-kit{text-align:center;}
+.kit-cards{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
+.kit-card{
+  width:54px;height:72px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  box-shadow:0 4px 12px rgba(0,0,0,.1);
+}
+.kit-label{font-family:'Fredoka',sans-serif;font-weight:800;font-size:14px;color:var(--mid);}
+.product-info{padding:40px 36px;display:flex;flex-direction:column;justify-content:center;}
+.product-name{font-family:'Fredoka',sans-serif;font-weight:900;font-size:22px;margin-bottom:6px;}
+.product-desc{font-size:14px;color:var(--soft);line-height:1.65;margin-bottom:20px;}
+.product-includes{margin-bottom:24px;}
+.product-includes li{
+  font-size:13px;color:var(--mid);padding:5px 0;
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;
+}
+.product-includes li:last-child{border-bottom:none;}
+.check{color:var(--green);font-size:16px;}
+.price-row{display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+.price{font-family:'Fredoka',sans-serif;font-weight:900;font-size:32px;color:var(--red);}
+.price-orig{font-size:16px;color:var(--soft);text-decoration:line-through;}
+.price-badge{background:#e8f8f2;color:var(--green);font-size:12px;font-weight:700;padding:3px 10px;border-radius:50px;}
+.qty-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.qty-label{font-size:13px;font-weight:600;color:var(--mid);}
+.qty-ctrl{display:flex;align-items:center;gap:8px;}
+.qty-btn{
+  width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);
+  background:#fff;cursor:pointer;font-size:18px;font-weight:700;color:var(--mid);
+  display:flex;align-items:center;justify-content:center;transition:border-color .15s;
+}
+.qty-btn:hover{border-color:var(--red);color:var(--red);}
+#qty-display{font-family:'Fredoka',sans-serif;font-weight:800;font-size:18px;min-width:28px;text-align:center;}
+.btn-buy{
+  width:100%;background:var(--red);color:#fff;border:none;
+  padding:16px;border-radius:50px;font-size:16px;font-weight:700;
+  cursor:pointer;font-family:'Nunito Sans',sans-serif;
+  transition:background .2s,transform .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-buy:hover{background:var(--red-light);transform:translateY(-1px);}
+.payment-note{font-size:11px;color:var(--soft);text-align:center;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:4px;}
+
+/* PAYMENT MODAL */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:#fff;border-radius:24px;padding:36px;width:100%;max-width:420px;
+  position:relative;animation:modal-in .25s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes modal-in{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.modal-close{
+  position:absolute;top:16px;right:16px;width:32px;height:32px;
+  border-radius:50%;border:1.5px solid var(--border);background:#fff;
+  cursor:pointer;font-size:18px;color:var(--mid);display:flex;align-items:center;justify-content:center;
+}
+.modal-title{font-family:'Fredoka',sans-serif;font-weight:900;font-size:20px;margin-bottom:4px;}
+.modal-sub{font-size:13px;color:var(--soft);margin-bottom:24px;}
+.order-summary{background:var(--cream);border-radius:12px;padding:16px;margin-bottom:20px;}
+.order-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;}
+.order-row.total{font-weight:700;font-size:15px;border-top:1px solid var(--border);margin-top:8px;padding-top:10px;}
+.form-group{margin-bottom:16px;}
+.form-label{font-size:12px;font-weight:700;color:var(--mid);margin-bottom:6px;display:block;}
+.form-input{
+  width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-size:14px;font-family:'Nunito Sans',sans-serif;outline:none;
+  transition:border-color .15s;
+}
+.form-input:focus{border-color:var(--red);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.btn-pay{
+  width:100%;background:var(--red);color:#fff;border:none;
+  padding:16px;border-radius:50px;font-size:16px;font-weight:700;
+  cursor:pointer;font-family:'Nunito Sans',sans-serif;
+  transition:background .2s;margin-top:4px;
+}
+.btn-pay:hover{background:var(--red-light);}
+.secure-note{font-size:11px;color:var(--soft);text-align:center;margin-top:10px;}
+
+/* FOOTER */
+footer{
+  background:var(--dark);color:rgba(255,255,255,0.6);
+  padding:40px 5%;text-align:center;
+}
+footer img{height:28px;opacity:0.7;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;}
+footer p{font-size:13px;line-height:1.7;}
+footer a{color:rgba(255,255,255,0.5);text-decoration:none;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .hero{padding:110px 5% 40px;}
+  .product-box{grid-template-columns:1fr;}
+  .product-visual{min-height:200px;}
+  nav .nav-links{display:none;}
+}
+/* PERSISTENT AR ACCESS — always visible, no scrolling or menu-hunting needed */
+#ar-fab{
+  position:fixed;bottom:24px;right:24px;z-index:500;
+  width:60px;height:60px;border-radius:50%;
+  background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;text-decoration:none;
+  box-shadow:0 8px 24px rgba(29,158,117,0.4);
+  transition:transform .15s;
+}
+#ar-fab:hover{transform:scale(1.08);}
+#ar-fab:active{transform:scale(0.95);}
+@media (max-width:480px){
+  #ar-fab{width:54px;height:54px;font-size:22px;bottom:18px;right:18px;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo"><img src="./assets/logo.png" alt="Ketry"/></a>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#cards">The Cards</a>
+    <a href="#shop">Buy Kit</a>
+    <a href="ar.html">📷 Open AR</a>
+  </div>
+  <a href="#shop" class="nav-cta">Buy Kit ₹499</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-tag"><span>✨</span> PhyGital Learning for Ages 2–6</div>
+    <h1>Flashcards that <em>come alive</em> on your phone</h1>
+    <p>Point the Ketry app at any card and watch a 3D animal pop out, roar, and teach your child its name in English and Malayalam.</p>
+    <div class="hero-btns">
+      <a href="#shop" class="btn-primary">🛒 Buy Kit — ₹499</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">10</div><div class="stat-label">Animal cards</div></div>
+      <div class="stat"><div class="stat-num">2</div><div class="stat-label">Languages</div></div>
+      <div class="stat"><div class="stat-num">Age 2–6</div><div class="stat-label">Ideal range</div></div>
+    </div>
+  </div>
+</section>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-video" id="how">
+  <div class="section-tag">See it in action</div>
+  <h2 class="section-title">Three steps to AR magic</h2>
+  <p class="section-sub">No app download. No setup. Just open a link in your browser.</p>
+  <div class="video-steps">
+    <div class="video-step">
+      <div class="video-frame">
+        <video class="how-video-el" playsinline muted loop autoplay poster="./assets/loading-logo.png">
+          <source src="./assets/videos/step1-scan.mp4" type="video/mp4"/>
+        </video>
+      </div>
+      <div class="step-num-badge">1</div>
+      <h3>Scan the card</h3>
+      <p>Open the Ketry link, allow camera access, and point your phone at any of the 10 cards.</p>
+    </div>
+    <div class="video-step">
+      <div class="video-frame">
+        <video class="how-video-el" playsinline muted loop autoplay poster="./assets/loading-logo.png">
+          <source src="./assets/videos/step2-appear.mp4" type="video/mp4"/>
+        </video>
+      </div>
+      <div class="step-num-badge">2</div>
+      <h3>Watch it come alive</h3>
+      <p>A 3D animal lifts right off the card — no app, no download, instantly in your browser.</p>
+    </div>
+    <div class="video-step">
+      <div class="video-frame">
+        <video class="how-video-el" playsinline muted loop autoplay poster="./assets/loading-logo.png">
+          <source src="./assets/videos/step3-learn.mp4" type="video/mp4"/>
+        </video>
+      </div>
+      <div class="step-num-badge">3</div>
+      <h3>Learn the name</h3>
+      <p>Bilingual audio teaches the animal's name in English and Malayalam, every single scan.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+// Graceful fallback: if a video file hasn't been uploaded yet (404) or fails
+// to play, swap it for a friendly placeholder instead of a broken box.
+document.querySelectorAll('.how-video-el').forEach(function(vid){
+  vid.addEventListener('error', function(){
+    const frame = vid.closest('.video-frame');
+    frame.innerHTML = '<div class="video-fallback"><div class="icon">🎬</div><span>Video coming soon</span></div>';
+  }, true);
+});
+</script>
+
+<!-- CARDS -->
+<section id="cards" style="background:#fff;padding:80px 5%;">
+  <div class="section-tag">The 10 cards</div>
+  <h2 class="section-title">Every card, a new world</h2>
+  <p class="section-sub">Scan the camera icon on any card for a bilingual AR experience.</p>
+  <div class="shop-grid" style="margin-top:36px;">
+    <div class="animal-card"><span class="em">🐄</span><div class="name">Cow</div><div class="ml">പശു</div></div>
+    <div class="animal-card"><span class="em">🦕</span><div class="name">Dinosaur</div><div class="ml">ഡൈനോസർ</div></div>
+    <div class="animal-card"><span class="em">🦆</span><div class="name">Duck</div><div class="ml">താറാവ്</div></div>
+    <div class="animal-card"><span class="em">🦊</span><div class="name">Fox</div><div class="ml">കുറുക്കൻ</div></div>
+    <div class="animal-card"><span class="em">🐸</span><div class="name">Frog</div><div class="ml">തവള</div></div>
+    <div class="animal-card"><span class="em">🐴</span><div class="name">Horse</div><div class="ml">കുതിര</div></div>
+    <div class="animal-card"><span class="em">🦝</span><div class="name">Raccoon</div><div class="ml">റക്കൂൺ</div></div>
+    <div class="animal-card"><span class="em">🦈</span><div class="name">Shark</div><div class="ml">സ്രാവ്</div></div>
+    <div class="animal-card"><span class="em">🐅</span><div class="name">Tiger</div><div class="ml">കടുവ</div></div>
+    <div class="animal-card"><span class="em">🐢</span><div class="name">Turtle</div><div class="ml">ആമ</div></div>
+  </div>
+</section>
+
+<!-- SHOP -->
+<section class="shop" id="shop">
+  <div class="section-tag">Buy the kit</div>
+  <h2 class="section-title">Ketry Animal AR Kit</h2>
+  <p class="section-sub">Everything your child needs for a phygital learning adventure.</p>
+
+  <div class="product-box">
+    <div class="product-visual">
+      <div class="product-kit">
+        <div class="kit-cards">
+          <div class="kit-card" style="background:#4ECDC4">🐄</div>
+          <div class="kit-card" style="background:#EFA52A">🦊</div>
+          <div class="kit-card" style="background:#C0392B">🐸</div>
+          <div class="kit-card" style="background:#7F77DD">🦕</div>
+        </div>
+        <div class="kit-label">+6 more cards</div>
+      </div>
+    </div>
+    <div class="product-info">
+      <div class="product-name">Animal Flashcard AR Kit</div>
+      <div class="product-desc">10 premium printed cards + unlimited WebAR access. No app, no subscription.</div>
+      <ul class="product-includes" style="list-style:none;padding:0;">
+        <li><span class="check">✓</span>10 printed animal flashcards (350gsm)</li>
+        <li><span class="check">✓</span>WebAR experience for all 10 animals</li>
+        <li><span class="check">✓</span>Bilingual English + Malayalam audio</li>
+        <li><span class="check">✓</span>Works on any Android or iPhone</li>
+        <li><span class="check">✓</span>Free delivery across India</li>
+      </ul>
+      <div class="price-row">
+        <span class="price">₹499</span>
+        <span class="price-orig">₹799</span>
+        <span class="price-badge">38% off</span>
+      </div>
+      <div class="qty-row">
+        <span class="qty-label">Qty:</span>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <span id="qty-display">1</span>
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+      <button class="btn-buy" onclick="openPayment()">
+        🛒 Buy Now — <span id="total-price">₹499</span>
+      </button>
+      <div class="payment-note">🔒 Secure payment · UPI · Cards · Net banking</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <img src="./assets/logo.png" alt="Ketry"/>
+  <p>ketry.in · Learn · Play · Grow<br/>
+  <a href="ar.html">📷 Open AR</a> · <a href="privacy.html">Privacy Policy</a> · Made with ❤️ in Kerala, India</p>
+</footer>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="paymentModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closePayment()">✕</button>
+    <div class="modal-title">Complete your order</div>
+    <div class="modal-sub">Delivered in 3–5 business days across India</div>
+
+    <div class="order-summary">
+      <div class="order-row"><span>Ketry Animal AR Kit × <span id="modal-qty">1</span></span><span id="modal-subtotal">₹499</span></div>
+      <div class="order-row"><span>Delivery</span><span style="color:var(--green)">Free</span></div>
+      <div class="order-row total"><span>Total</span><span id="modal-total">₹499</span></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Full name</label>
+      <input class="form-input" type="text" id="f-name" placeholder="Rahul Kumar"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Phone number</label>
+      <input class="form-input" type="tel" id="f-phone" placeholder="+91 98765 43210"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email address</label>
+      <input class="form-input" type="email" id="f-email" placeholder="rahul@email.com"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Delivery address</label>
+      <input class="form-input" type="text" id="f-addr" placeholder="House no, Street, Area"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">City</label>
+        <input class="form-input" type="text" id="f-city" placeholder="Kottayam"/>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">PIN code</label>
+        <input class="form-input" type="text" id="f-pin" placeholder="686121"/>
+      </div>
+    </div>
+
+    <button class="btn-pay" onclick="proceedToPayment()" style="margin-top:20px;">
+      Pay <span id="pay-btn-amount">₹499</span> securely →
+    </button>
+    <div class="secure-note">🔒 Powered by Cashfree · UPI · Cards · Net banking · Wallets</div>
+  </div>
+</div>
+
+<script>
+let qty = 1;
+const PRICE = 499;
+
+function changeQty(d){
+  qty = Math.max(1, Math.min(10, qty + d));
+  document.getElementById('qty-display').textContent = qty;
+  const t = `₹${qty * PRICE}`;
+  document.getElementById('total-price').textContent = t;
+}
+
+function openPayment(){
+  document.getElementById('modal-qty').textContent = qty;
+  const t = qty * PRICE;
+  document.getElementById('modal-subtotal').textContent = `₹${t}`;
+  document.getElementById('modal-total').textContent = `₹${t}`;
+  document.getElementById('pay-btn-amount').textContent = `₹${t}`;
+  document.getElementById('paymentModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePayment(){
+  document.getElementById('paymentModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('paymentModal').addEventListener('click', function(e){
+  if(e.target === this) closePayment();
+});
+
+async function proceedToPayment(){
+  const name  = document.getElementById('f-name').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const addr  = document.getElementById('f-addr').value.trim();
+  const city  = document.getElementById('f-city').value.trim();
+  const pin   = document.getElementById('f-pin').value.trim();
+
+  if(!name||!phone||!email||!addr||!city||!pin){
+    alert('Please fill in all fields to continue.'); return;
+  }
+
+  const btn = document.querySelector('.btn-pay');
+  const originalBtnText = btn.textContent;
+  btn.textContent = 'Connecting to payment…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone, email, address: addr, city, pin, amount: qty * PRICE })
+    });
+    const data = await res.json();
+
+    if(!res.ok || !data.payment_session_id){
+      alert((data && data.error) ? data.error : 'Could not start payment. Please try again.');
+      btn.textContent = originalBtnText;
+      btn.disabled = false;
+      return;
+    }
+
+    // Safely try to remember the order id (ignore if browser blocks it)
+    try {
+      sessionStorage.setItem('ketryLastOrderId', data.order_id);
+    } catch(storageErr) {
+      console.warn("Session storage blocked by browser settings.");
+    }
+
+    const cashfree = Cashfree({ mode: 'sandbox' }); // switch to 'production' once CASHFREE_ENV is production too
+    cashfree.checkout({
+      paymentSessionId: data.payment_session_id,
+      redirectTarget: '_self'
+      // Cashfree will redirect back to the return_url set server-side
+      // (order-status.html?order_id=...) once payment completes.
+    });
+  } catch(err){
+    alert('Something went wrong connecting to payment. Please check your connection and try again.');
+    btn.textContent = originalBtnText;
+    btn.disabled = false;
+  }
+}
+</script>
+
+<a href="ar.html" id="ar-fab" title="Open AR Camera">📷</a>
+
+</body>
+</html>
