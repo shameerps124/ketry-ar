@@ -10,11 +10,11 @@
   "kv_namespaces": [
     {
       "binding": "ORDERS",
-      "id": "d70ca9a5aa46465a9e2dec90f838c2b2"
+      "id": "5134bd51b7c84dffa21d960b60394932"
     },
     {
       "binding": "CODES",
-      "id": "7c1c29098f9c40e6a084387cb0bddff9"
+      "id": "cec6ebca217b4cb8867e95b08b7d3dc9"
     }
   ]
 }
