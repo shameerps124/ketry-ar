@@ -1,19 +1,17 @@
-// Single Worker entry point for the new unified Cloudflare Workers + Static
-// Assets model. Replaces the old functions/api/*.js file-based routing,
-// which only worked on classic Cloudflare Pages, not this project type.
+// Single Worker entry point for Cloudflare Workers + Static Assets.
+// Serves Ketry A-Z AR Book static files via ASSETS and handles order/code APIs.
 //
-// Static files (index.html, ar.html, assets/, etc.) are served automatically
-// via the ASSETS binding for any request that isn't matched below.
-//
-// Required bindings/env vars (Cloudflare dashboard → Settings/Bindings):
+// Required bindings/env vars (Cloudflare dashboard -> Settings/Bindings):
 //   ASSETS                   (static assets binding, configured in wrangler.jsonc)
-//   ORDERS, CODES             (KV namespaces)
-//   CASHFREE_CLIENT_ID        (secret)
-//   CASHFREE_CLIENT_SECRET    (secret)
-//   CASHFREE_ENV              ("sandbox" or "production")
+//   ORDERS, CODES            (KV namespaces)
+//   CASHFREE_CLIENT_ID       (secret)
+//   CASHFREE_CLIENT_SECRET   (secret)
+//   CASHFREE_ENV             ("sandbox" or "production")
+//   ADMIN_SECRET             (secret)
 
 const CODE_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I/O, avoid confusion
 const MAX_DEVICES = 3;
+const UNIT_PRICE = 499.00;
 
 function jsonResponse(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
@@ -39,12 +37,13 @@ async function handleCreateOrder(request, env) {
     return jsonResponse({ error: 'Invalid request body' }, 400);
   }
 
-  const { name, phone, email, address, city, pin } = body || {};
+  const { name, phone, email, address, city, pin, qty } = body || {};
 
   if (!name || typeof name !== 'string' || name.trim().length < 2) {
     return jsonResponse({ error: 'Please enter a valid name' }, 400);
   }
-  if (!isValidPhone(phone || '')) {
+  const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-10);
+  if (!isValidPhone(cleanPhone)) {
     return jsonResponse({ error: 'Please enter a valid 10-digit Indian phone number' }, 400);
   }
   if (!isValidEmail(email || '')) {
@@ -60,7 +59,9 @@ async function handleCreateOrder(request, env) {
     return jsonResponse({ error: 'Please enter a valid 6-digit PIN code' }, 400);
   }
 
-  const ORDER_AMOUNT = 499.00;
+  const parsedQty = parseInt(qty, 10);
+  const safeQty = (!isNaN(parsedQty) && parsedQty >= 1 && parsedQty <= 10) ? parsedQty : 1;
+  const orderAmount = Number((UNIT_PRICE * safeQty).toFixed(2));
   const ORDER_CURRENCY = 'INR';
   const orderId = genOrderId();
   const cashfreeBase = env.CASHFREE_ENV === 'production'
@@ -71,13 +72,13 @@ async function handleCreateOrder(request, env) {
 
   const cfPayload = {
     order_id: orderId,
-    order_amount: ORDER_AMOUNT,
+    order_amount: orderAmount,
     order_currency: ORDER_CURRENCY,
     customer_details: {
       customer_id: `cust_${orderId}`,
       customer_name: name.trim(),
       customer_email: email.trim(),
-      customer_phone: phone.trim()
+      customer_phone: cleanPhone
     },
     order_meta: { return_url: returnUrl }
   };
@@ -106,8 +107,17 @@ async function handleCreateOrder(request, env) {
 
   const record = {
     status: 'pending',
-    customer: { name: name.trim(), phone: phone.trim(), email: email.trim(), address: address.trim(), city: city.trim(), pin: pin.trim() },
-    amount: ORDER_AMOUNT,
+    product: 'Ketry A-Z AR Book',
+    qty: safeQty,
+    customer: {
+      name: name.trim(),
+      phone: cleanPhone,
+      email: email.trim(),
+      address: address.trim(),
+      city: city.trim(),
+      pin: pin.trim()
+    },
+    amount: orderAmount,
     createdAt: Date.now(),
     code: null
   };
@@ -149,10 +159,8 @@ async function verifySignature(rawBody, timestamp, signatureHeader, secret) {
 }
 
 // ---------- GET /api/admin/generate-codes ----------
-// Private tool: generates a fresh batch of pre-printable, pre-registered
-// codes — used for BOTH ketry.in orders and Amazon/Flipkart stock alike,
-// since every channel now ships the same physical box with a code inside.
-// Protected by ADMIN_SECRET (set in Cloudflare env vars) — never share this URL.
+// Generates pre-printable, pre-registered codes for Ketry A-Z AR Books.
+// Protected by ADMIN_SECRET (set in Cloudflare env vars).
 async function handleAdminGenerateCodes(request, env) {
   const url = new URL(request.url);
   const key = url.searchParams.get('key');
@@ -163,7 +171,7 @@ async function handleAdminGenerateCodes(request, env) {
 
   let count = parseInt(url.searchParams.get('count') || '100', 10);
   if (isNaN(count) || count < 1) count = 100;
-  if (count > 1000) count = 1000; // safety cap per request — run multiple times for bigger batches
+  if (count > 1000) count = 1000;
 
   const codes = [];
   for (let i = 0; i < count; i++) {
@@ -222,9 +230,6 @@ async function handleWebhook(request, env) {
 
   if (eventType === 'PAYMENT_SUCCESS_WEBHOOK' || eventType === 'PAYMENT_SUCCESS') {
     if (order.status !== 'paid') {
-      // No code is generated here anymore. Every channel (ketry.in, Amazon,
-      // Flipkart) now ships the same physical box with a pre-printed code
-      // inside — see /api/admin/generate-codes for how batches are created.
       order.status = 'paid';
       order.paidAt = Date.now();
       await env.ORDERS.put(orderId, JSON.stringify(order), { expirationTtl: 60 * 60 * 24 * 365 });
@@ -268,7 +273,7 @@ async function handleRedeem(request, env) {
   const deviceToken = (body.deviceToken || '').trim();
 
   if (!code || !/^KETRY-\d{4}-[A-Z]$/.test(code)) {
-    return jsonResponse({ ok: false, message: "That code doesn't look right — check the card inside your box." });
+    return jsonResponse({ ok: false, message: "That code doesn't look right — check the code printed inside your Ketry A-Z AR book." });
   }
   if (!deviceToken) {
     return jsonResponse({ ok: false, message: 'Missing device identifier' }, 400);
@@ -286,8 +291,11 @@ async function handleRedeem(request, env) {
   }
 
   if (record.devices.length >= record.maxDevices) {
-  return jsonResponse({ ok: false, message: `You've reached this code's limit of ${record.maxDevices} devices. This can happen if your phone occasionally clears its data — it's not a problem! Message us on WhatsApp at +91-8714257407 with your order details and we'll reset it for you in minutes.` });
-}
+    return jsonResponse({
+      ok: false,
+      message: `You've reached this code's limit of ${record.maxDevices} devices. This can happen if your phone occasionally clears its data — it's not a problem! Message us on WhatsApp at +91-8714257407 with your order details and we'll reset it for you in minutes.`
+    });
+  }
 
   record.devices.push(deviceToken);
   await env.CODES.put(code, JSON.stringify(record));
