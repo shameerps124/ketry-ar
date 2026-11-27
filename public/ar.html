@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Ketry AR — Animal Flashcards</title>
+<title>Ketry AR — A-Z Learning Book</title>
 
 <!-- PWA Manifest & Theme Color -->
 <link rel="manifest" href="/manifest.json">
@@ -20,18 +20,10 @@
   }
 </script>
 
-<!-- Replace the 1.5.0 link with this 1.4.2 link -->
+<!-- A-Frame 1.4.2 + MindAR + Extras -->
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
-
-<!-- Draco decoder for compressed GLB models -->
-<script>
-  window.AFRAME = window.AFRAME || {};
-  if (window.AFRAME.registerComponent) {
-    // Set Draco decoder path so A-Frame can decode compressed models
-  }
-</script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -41,8 +33,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0a0e0a;font-family:
 #splash h1{font-size:26px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:10px;}
 #splash h1 span{color:#1D9E75;}
 #splash p{font-size:14px;color:rgba(255,255,255,0.55);line-height:1.65;max-width:280px;margin-bottom:28px;}
-.splash-cards{display:flex;gap:10px;justify-content:center;margin-bottom:28px;}
-.splash-card{width:50px;height:66px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 16px rgba(0,0,0,0.4);}
+.splash-letters{display:flex;gap:10px;justify-content:center;margin-bottom:28px;}
+.splash-letter{width:50px;height:66px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.4);}
 #start-btn{background:#1D9E75;color:#fff;border:none;padding:15px 40px;border-radius:50px;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(29,158,117,0.4);}
 #start-note{margin-top:12px;font-size:12px;color:rgba(255,255,255,0.3);}
 #back-home{position:absolute;top:16px;left:16px;color:rgba(255,255,255,0.4);font-size:13px;text-decoration:none;}
@@ -54,25 +46,25 @@ a-scene{position:fixed;inset:0;z-index:1;background:transparent!important;}
 a-scene canvas{background:transparent!important;}
 video{position:fixed!important;top:0!important;left:0!important;width:100%!important;height:100%!important;object-fit:cover!important;z-index:0!important;}
 .mindar-ui-overlay{display:none!important;}
-#name-banner{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:rgba(0,0,0,0.65);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.15);border-radius:14px;padding:10px 20px;text-align:center;z-index:30;display:none;}#banner-emoji{font-size:32px;display:block;margin-bottom:4px;}
-#banner-en{font-size:16px;font-weight:700;color:#fff;}
-#banner-ml{font-size:13px;color:rgba(255,255,255,0.6);margin-top:2px;}
+#name-banner{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:rgba(0,0,0,0.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.18);border-radius:16px;padding:10px 24px;text-align:center;z-index:30;display:none;min-width:140px;}
+#banner-letter{font-size:32px;font-weight:900;color:#1D9E75;line-height:1.1;display:block;margin-bottom:2px;}
+#banner-en{font-size:17px;font-weight:700;color:#fff;letter-spacing:0.5px;}
 #ui-top{position:fixed;top:0;left:0;right:0;z-index:20;padding:16px 20px;display:none;justify-content:space-between;align-items:center;background:linear-gradient(to bottom,rgba(0,0,0,0.6),transparent);}
 #top-logo{height:30px;object-fit:contain;filter:brightness(10);transform:translateY(2px);}
 #ar-pill{font-size:11px;font-weight:600;color:#1D9E75;background:rgba(0,0,0,0.5);border:1px solid #1D9E75;padding:4px 10px;border-radius:50px;display:flex;align-items:center;gap:5px;}
 .live-dot{width:6px;height:6px;border-radius:50%;background:#1D9E75;animation:blink 1.2s infinite;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
-#ui-bottom{position:fixed;bottom:0;left:0;right:0;z-index:20;padding:10px 16px 20px;display:none;background:linear-gradient(to top,rgba(0,0,0,0.7),transparent);}
-#hint{text-align:center;font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:8px;transition:opacity .4s;}
-#strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;}
+#ui-bottom{position:fixed;bottom:0;left:0;right:0;z-index:20;padding:10px 16px 20px;display:none;background:linear-gradient(to top,rgba(0,0,0,0.75),transparent);}
+#hint{text-align:center;font-size:13px;color:rgba(255,255,255,0.65);margin-bottom:8px;transition:opacity .4s;}
+#strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
 #strip::-webkit-scrollbar{display:none;}
-.sc{flex-shrink:0;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;padding:8px 10px;text-align:center;min-width:54px;transition:border-color .3s,background .3s;}
-.sc.found{border-color:#1D9E75;background:rgba(29,158,117,0.25);}
-.sc span:first-child{font-size:18px;display:block;margin-bottom:2px;}
-.sc span:last-child{font-size:9px;color:rgba(255,255,255,0.65);font-weight:600;}
+.sc{flex-shrink:0;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;padding:7px 10px;text-align:center;min-width:56px;transition:border-color .3s,background .3s;}
+.sc.found{border-color:#1D9E75;background:rgba(29,158,117,0.28);}
+.sc span:first-child{font-size:18px;font-weight:900;color:#fff;display:block;margin-bottom:2px;}
+.sc span:last-child{font-size:9px;color:rgba(255,255,255,0.7);font-weight:600;white-space:nowrap;}
 .scan-animation {
-  width: 70px;
-  height: 70px;
+  width: 72px;
+  height: 72px;
   border: 2px dashed rgba(255, 255, 255, 0.4);
   border-radius: 12px;
   position: relative;
@@ -80,9 +72,11 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 34px;
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
   overflow: hidden;
-  background: rgba(29, 158, 117, 0.1);
+  background: rgba(29, 158, 117, 0.12);
 }
 .scan-line {
   position: absolute;
@@ -128,33 +122,30 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
 <div id="code-gate">
   <img src="./assets/loading-logo.png" alt="Ketry"/>
   <h2>Enter Your Ketry Code</h2>
-  <p>Find your unique code printed inside your Ketry flashcard box, then enter it below to unlock the AR experience.</p>
+  <p>Find your unique code printed inside your Ketry A–Z AR book, then enter it below to unlock the AR experience.</p>
 
-  <!-- The one and only Install Button -->
   <button id="install-app-btn-gate" style="display:none; background:#EFA52A; color:#000; border:none; padding:12px 30px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-bottom:20px; width:100%; max-width:260px; box-shadow:0 4px 15px rgba(239,165,42,0.4);">📲 Install App to Save Code</button>
 
-  <!-- The one and only Login Input -->
   <input id="code-input" type="text" placeholder="KETRY-1234-A" maxlength="14" autocomplete="off" autocapitalize="characters"/>
   <button id="code-submit" onclick="checkCode()">Unlock AR</button>
   <div id="code-error"></div>
-  <div id="code-help">Don't have a code? Codes come with every genuine Ketry flashcard set — <a href="./index.html">get yours here</a>.</div>
+  <div id="code-help">Don't have a code? Codes come with every genuine Ketry A–Z AR book — <a href="./index.html">get yours here</a>.</div>
 </div>
 
 <div id="splash">
   <a href="/" id="back-home">← Home</a>
   <img src="./assets/loading-logo.png" id="splash-logo" alt="Ketry"/>
-  <h1>Point. Scan.<br/><span>Watch it come alive.</span></h1>
-  <p>Hold any Ketry animal card steady in front of your camera.</p>
-  
-  <!-- NEW INSTALL BUTTON -->
+  <h1>Point. Scan.<br/><span>Watch A–Z come alive.</span></h1>
+  <p>Hold your phone steady over any page of your Ketry A–Z AR book.</p>
+
   <button id="install-app-btn" style="display:none; background:#EFA52A; color:#000; border:none; padding:12px 30px; border-radius:50px; font-size:15px; font-weight:700; cursor:pointer; margin-bottom:20px; box-shadow:0 4px 15px rgba(239,165,42,0.4);">📲 Install Ketry App</button>
 
-  <div class="splash-cards">
-    <div class="splash-card" style="background:#4ECDC4">🐄</div>
-    <div class="splash-card" style="background:#EFA52A">🦊</div>
-    <div class="splash-card" style="background:#C0392B">🦈</div>
-    <div class="splash-card" style="background:#7F77DD">🐸</div>
-    <div class="splash-card" style="background:#2ECC71">🐢</div>
+  <div class="splash-letters">
+    <div class="splash-letter" style="background:#4ECDC4">A</div>
+    <div class="splash-letter" style="background:#EFA52A">B</div>
+    <div class="splash-letter" style="background:#C0392B">C</div>
+    <div class="splash-letter" style="background:#7F77DD">Y</div>
+    <div class="splash-letter" style="background:#2ECC71">Z</div>
   </div>
   <button id="start-btn" onclick="startAR()">📷 Start Camera</button>
   <p id="start-note">Allow camera access when prompted</p>
@@ -165,38 +156,53 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
   <img src="./assets/loading-logo.png" alt="Ketry"/>
   <p style="font-size: 16px; font-weight: bold; color: white; margin-bottom: 0;">Starting AR...</p>
   <div class="scan-animation">
-    🐄
+    A–Z
     <div class="scan-line"></div>
   </div>
   <p style="font-size: 13px; color: #1D9E75; text-align: center; max-width: 250px; line-height: 1.4;">
-    Focus your camera directly on a flashcard!
+    Focus your camera directly on any page of the book!
   </p>
 </div>
 
 <div id="name-banner">
-  <span id="banner-emoji"></span>
+  <span id="banner-letter"></span>
   <div id="banner-en"></div>
-  <div id="banner-ml"></div>
 </div>
 
 <div id="ui-top">
   <img src="./assets/loading-logo.png" id="top-logo" alt="Ketry"/>
-  <div id="ar-pill"><span class="live-dot"></span>AR Live</div>
+  <div id="ar-pill"><span class="live-dot"></span>A–Z AR Live</div>
 </div>
 
 <div id="ui-bottom">
-  <div id="hint">👆 Point at any Ketry animal card</div>
+  <div id="hint">👆 Point at any page in your Ketry A–Z AR book</div>
   <div id="strip">
-    <div class="sc" id="sc0"><span>🐄</span><span>Cow</span></div>
-    <div class="sc" id="sc1"><span>🦕</span><span>Dino</span></div>
-    <div class="sc" id="sc2"><span>🦆</span><span>Duck</span></div>
-    <div class="sc" id="sc3"><span>🦊</span><span>Fox</span></div>
-    <div class="sc" id="sc4"><span>🐸</span><span>Frog</span></div>
-    <div class="sc" id="sc5"><span>🐴</span><span>Horse</span></div>
-    <div class="sc" id="sc6"><span>🦝</span><span>Raccoon</span></div>
-    <div class="sc" id="sc7"><span>🦈</span><span>Shark</span></div>
-    <div class="sc" id="sc8"><span>🐅</span><span>Tiger</span></div>
-    <div class="sc" id="sc9"><span>🐢</span><span>Turtle</span></div>
+    <div class="sc" id="sc0"><span>A</span><span>Apple</span></div>
+    <div class="sc" id="sc1"><span>B</span><span>Bear</span></div>
+    <div class="sc" id="sc2"><span>C</span><span>Cat</span></div>
+    <div class="sc" id="sc3"><span>D</span><span>Dog</span></div>
+    <div class="sc" id="sc4"><span>E</span><span>Elephant</span></div>
+    <div class="sc" id="sc5"><span>F</span><span>Frog</span></div>
+    <div class="sc" id="sc6"><span>G</span><span>Giraffe</span></div>
+    <div class="sc" id="sc7"><span>H</span><span>Horse</span></div>
+    <div class="sc" id="sc8"><span>I</span><span>Ice Cream</span></div>
+    <div class="sc" id="sc9"><span>J</span><span>Juice</span></div>
+    <div class="sc" id="sc10"><span>K</span><span>Kangaroo</span></div>
+    <div class="sc" id="sc11"><span>L</span><span>Lion</span></div>
+    <div class="sc" id="sc12"><span>M</span><span>Monkey</span></div>
+    <div class="sc" id="sc13"><span>N</span><span>Nest</span></div>
+    <div class="sc" id="sc14"><span>O</span><span>Octopus</span></div>
+    <div class="sc" id="sc15"><span>P</span><span>Penguin</span></div>
+    <div class="sc" id="sc16"><span>Q</span><span>Queen</span></div>
+    <div class="sc" id="sc17"><span>R</span><span>Raccoon</span></div>
+    <div class="sc" id="sc18"><span>S</span><span>Sun</span></div>
+    <div class="sc" id="sc19"><span>T</span><span>Tiger</span></div>
+    <div class="sc" id="sc20"><span>U</span><span>Umbrella</span></div>
+    <div class="sc" id="sc21"><span>V</span><span>Van</span></div>
+    <div class="sc" id="sc22"><span>W</span><span>Whale</span></div>
+    <div class="sc" id="sc23"><span>X</span><span>Xylophone</span></div>
+    <div class="sc" id="sc24"><span>Y</span><span>Yak</span></div>
+    <div class="sc" id="sc25"><span>Z</span><span>Zebra</span></div>
   </div>
 </div>
 
@@ -215,35 +221,84 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
 
   <a-camera position="0 0 0" look-controls="enabled: false" near="0.001"></a-camera>
 
+  <!-- 26 A-Z Targets (lazy-loaded on first scan to keep mobile memory low) -->
   <a-entity mindar-image-target="targetIndex: 0" id="t0">
-    <a-gltf-model position="0 0 0.1" scale="0.6 0.6 0.6" src="./assets/models/cow.glb" animation-mixer></a-gltf-model>
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/apple.glb" animation-mixer></a-gltf-model>
   </a-entity>
   <a-entity mindar-image-target="targetIndex: 1" id="t1">
-    <a-gltf-model position="0.3 -0.5 0.1" scale="0.26 0.26 0.26" src="./assets/models/dinosaur.glb" animation-mixer></a-gltf-model>
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/bear.glb" animation-mixer></a-gltf-model>
   </a-entity>
   <a-entity mindar-image-target="targetIndex: 2" id="t2">
-    <a-gltf-model position="0 0 0.1" scale="0.3 0.3 0.3" src="./assets/models/duck.glb" animation-mixer></a-gltf-model>
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/cat.glb" animation-mixer></a-gltf-model>
   </a-entity>
   <a-entity mindar-image-target="targetIndex: 3" id="t3">
-    <a-gltf-model position="0 0 0.1" scale="1.2 1.2 1.2" src="./assets/models/fox.glb" animation-mixer></a-gltf-model>
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/dog.glb" animation-mixer></a-gltf-model>
   </a-entity>
   <a-entity mindar-image-target="targetIndex: 4" id="t4">
-    <a-gltf-model position="0 -0.3 0.1" scale="0.20 0.20 0.20" src="./assets/models/frog.glb" animation-mixer></a-gltf-model>
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/elephant.glb" animation-mixer></a-gltf-model>
   </a-entity>
   <a-entity mindar-image-target="targetIndex: 5" id="t5">
-    <a-gltf-model position="0 -0.4 0.1" scale="0.45 0.45 0.45" src="./assets/models/horse.glb" animation-mixer></a-gltf-model>
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/frog.glb" animation-mixer></a-gltf-model>
   </a-entity>
   <a-entity mindar-image-target="targetIndex: 6" id="t6">
-    <a-gltf-model position="0 0 0.1" scale="7 7 7" src="./assets/models/raccoon.glb" animation-mixer></a-gltf-model>
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/giraffe.glb" animation-mixer></a-gltf-model>
   </a-entity>
   <a-entity mindar-image-target="targetIndex: 7" id="t7">
-    <a-gltf-model position="0 0 0.1" scale="0.8 0.8 0.8" src="./assets/models/shark.glb" animation-mixer></a-gltf-model>
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/horse.glb" animation-mixer></a-gltf-model>
   </a-entity>
   <a-entity mindar-image-target="targetIndex: 8" id="t8">
-    <a-gltf-model position="0 0 0.1" scale="1.3 1.3 1.3" src="./assets/models/tiger.glb" animation-mixer></a-gltf-model>
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/ice-cream.glb" animation-mixer></a-gltf-model>
   </a-entity>
   <a-entity mindar-image-target="targetIndex: 9" id="t9">
-    <a-gltf-model position="0 -0.8 0.1" scale="0.3 0.3 0.3" src="./assets/models/turtle.glb" animation-mixer></a-gltf-model>
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/juice.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 10" id="t10">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/kangaroo.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 11" id="t11">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/lion.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 12" id="t12">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/monkey.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 13" id="t13">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/nest.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 14" id="t14">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/octopus.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 15" id="t15">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/penguin.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 16" id="t16">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/queen.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 17" id="t17">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/raccoon.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 18" id="t18">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/sun.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 19" id="t19">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/tiger.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 20" id="t20">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/umbrella.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 21" id="t21">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/van.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 22" id="t22">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/whale.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 23" id="t23">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/xylophone.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 24" id="t24">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/yak.glb" animation-mixer></a-gltf-model>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 25" id="t25">
+    <a-gltf-model position="0 0 0.1" scale="0.5 0.5 0.5" data-src="./assets/models/zebra.glb" animation-mixer></a-gltf-model>
   </a-entity>
 
   <a-entity id="frozen-slot"></a-entity>
@@ -251,60 +306,101 @@ video{position:fixed!important;top:0!important;left:0!important;width:100%!impor
 </a-scene>
 
 <script>
-const ANIMALS = [
-  {em:'🐄', en:'Cow',      ml:'പശു',       audio:'cow'},
-  {em:'🦕', en:'Dinosaur', ml:'ഡൈനോസർ',   audio:'dinosaur'},
-  {em:'🦆', en:'Duck',     ml:'താറാവ്',    audio:'duck'},
-  {em:'🦊', en:'Fox',      ml:'കുറുക്കൻ',  audio:'fox'},
-  {em:'🐸', en:'Frog',     ml:'തവള',       audio:'frog'},
-  {em:'🐴', en:'Horse',    ml:'കുതിര',     audio:'horse'},
-  {em:'🦝', en:'Raccoon',  ml:'റക്കൂൺ',    audio:'raccoon'},
-  {em:'🦈', en:'Shark',    ml:'സ്രാവ്',    audio:'shark'},
-  {em:'🐅', en:'Tiger',    ml:'കടുവ',      audio:'tiger'},
-  {em:'🐢', en:'Turtle',   ml:'ആമ',        audio:'turtle'},
+const ALPHABET = [
+  { letter: 'A', word: 'Apple', file: 'apple' },
+  { letter: 'B', word: 'Bear', file: 'bear' },
+  { letter: 'C', word: 'Cat', file: 'cat' },
+  { letter: 'D', word: 'Dog', file: 'dog' },
+  { letter: 'E', word: 'Elephant', file: 'elephant' },
+  { letter: 'F', word: 'Frog', file: 'frog' },
+  { letter: 'G', word: 'Giraffe', file: 'giraffe' },
+  { letter: 'H', word: 'Horse', file: 'horse' },
+  { letter: 'I', word: 'Ice Cream', file: 'ice-cream' },
+  { letter: 'J', word: 'Juice', file: 'juice' },
+  { letter: 'K', word: 'Kangaroo', file: 'kangaroo' },
+  { letter: 'L', word: 'Lion', file: 'lion' },
+  { letter: 'M', word: 'Monkey', file: 'monkey' },
+  { letter: 'N', word: 'Nest', file: 'nest' },
+  { letter: 'O', word: 'Octopus', file: 'octopus' },
+  { letter: 'P', word: 'Penguin', file: 'penguin' },
+  { letter: 'Q', word: 'Queen', file: 'queen' },
+  { letter: 'R', word: 'Raccoon', file: 'raccoon' },
+  { letter: 'S', word: 'Sun', file: 'sun' },
+  { letter: 'T', word: 'Tiger', file: 'tiger' },
+  { letter: 'U', word: 'Umbrella', file: 'umbrella' },
+  { letter: 'V', word: 'Van', file: 'van' },
+  { letter: 'W', word: 'Whale', file: 'whale' },
+  { letter: 'X', word: 'Xylophone', file: 'xylophone' },
+  { letter: 'Y', word: 'Yak', file: 'yak' },
+  { letter: 'Z', word: 'Zebra', file: 'zebra' }
 ];
 
-const audioCache = {};
-function playAudio(name){
-  Object.values(audioCache).forEach(a=>{try{a.pause();a.currentTime=0;}catch(e){}});
-  if(!audioCache[name]) {
-    audioCache[name] = new Audio(`./assets/audio/${name}.mp3`);
-    audioCache[name].loop = true;
+// Single reusable audio player (lighter on mobile memory & reliable on iOS Safari)
+const audioPlayer = new Audio();
+audioPlayer.loop = true;
+let audioUnlocked = false;
+
+function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  try {
+    // Unlock audio context on user tap
+    audioPlayer.src = `./assets/audio/${ALPHABET[0].file}.mp3`;
+    audioPlayer.muted = true;
+    const p = audioPlayer.play();
+    if (p !== undefined) {
+      p.then(() => {
+        audioPlayer.pause();
+        audioPlayer.muted = false;
+        audioPlayer.currentTime = 0;
+      }).catch(() => {});
+    }
+  } catch (e) {
+    console.warn('Audio unlock skipped.');
   }
-  audioCache[name].play().catch(()=>{});
 }
-function stopAudio(name){
-  if(audioCache[name]){try{audioCache[name].pause();audioCache[name].currentTime=0;}catch(e){}}
+
+function playAudio(file) {
+  try {
+    const targetSrc = `./assets/audio/${file}.mp3`;
+    if (!audioPlayer.src.endsWith(`/assets/audio/${file}.mp3`)) {
+      audioPlayer.src = targetSrc;
+    }
+    audioPlayer.muted = false;
+    audioPlayer.currentTime = 0;
+    audioPlayer.play().catch(() => {});
+  } catch (e) {}
+}
+
+function stopAudio() {
+  try {
+    audioPlayer.pause();
+    audioPlayer.currentTime = 0;
+  } catch (e) {}
 }
 
 // --- Redemption code gate (server-verified, device-limited) ---
-
-// "Super Storage" safely tries 4 different methods to beat strict mobile blockers
 function saveTokenAndCode(token, code) {
-  try { 
-    localStorage.setItem('ketryToken', token); localStorage.setItem('ketryCode', code); 
-    sessionStorage.setItem('ketryToken', token); sessionStorage.setItem('ketryCode', code); 
+  try {
+    localStorage.setItem('ketryToken', token); localStorage.setItem('ketryCode', code);
+    sessionStorage.setItem('ketryToken', token); sessionStorage.setItem('ketryCode', code);
   } catch(e){}
-  
-  try { 
-    document.cookie = "ketryToken=" + token + "; max-age=31536000; path=/"; 
-    document.cookie = "ketryCode=" + code + "; max-age=31536000; path=/"; 
+
+  try {
+    document.cookie = "ketryToken=" + token + "; max-age=31536000; path=/";
+    document.cookie = "ketryCode=" + code + "; max-age=31536000; path=/";
   } catch(e){}
-  
-  // 3. Window Name (Safely JSON encoded to prevent text splitting errors)
-  try { 
-    window.name = JSON.stringify({ token: token, code: code }); 
+
+  try {
+    window.name = JSON.stringify({ token: token, code: code });
   } catch(e){}
 }
 
 function getSavedData() {
   let data = { token: null, code: null };
-  
-  // Try Local/Session Storage
   try { data.token = localStorage.getItem('ketryToken') || sessionStorage.getItem('ketryToken'); } catch(e){}
   try { data.code = localStorage.getItem('ketryCode') || sessionStorage.getItem('ketryCode'); } catch(e){}
-  
-  // Try Cookies
+
   if (!data.token || !data.code) {
     try {
       const cookies = document.cookie.split(';');
@@ -314,8 +410,7 @@ function getSavedData() {
       });
     } catch(e){}
   }
-  
-  // Try Window.name (Ultimate fallback using safe JSON parsing)
+
   if (!data.token || !data.code) {
     try {
       const parsed = JSON.parse(window.name);
@@ -328,26 +423,25 @@ function getSavedData() {
 
 let currentSessionData = getSavedData();
 
-function getDeviceToken(){
+function getDeviceToken() {
   if (currentSessionData.token) return currentSessionData.token;
-  
   let newToken = 'ketry_' + Math.random().toString(36).substr(2, 9) + Date.now();
   currentSessionData.token = newToken;
   saveTokenAndCode(newToken, currentSessionData.code || '');
   return newToken;
 }
 
-function showAppAfterUnlock(slotsUsed, maxDevices){
-  document.getElementById('code-gate').style.display='none';
-  document.getElementById('splash').style.display='flex';
-  if(slotsUsed && maxDevices){
+function showAppAfterUnlock(slotsUsed, maxDevices) {
+  document.getElementById('code-gate').style.display = 'none';
+  document.getElementById('splash').style.display = 'flex';
+  if (slotsUsed && maxDevices) {
     document.getElementById('slots-note').textContent = `Family device ${slotsUsed} of ${maxDevices} activated`;
   } else {
     document.getElementById('slots-note').textContent = `Device recognized. Welcome back!`;
   }
 }
 
-async function redeemCode(code){
+async function redeemCode(code) {
   try {
     const deviceToken = getDeviceToken();
     const res = await fetch('/api/redeem', {
@@ -356,13 +450,12 @@ async function redeemCode(code){
       body: JSON.stringify({ code, deviceToken })
     });
     return await res.json();
-  } catch(e){
-    // FIX: Distinguish a network failure from an invalid code
+  } catch(e) {
     return { ok: false, networkError: true, message: 'Could not reach the server. Check your connection and try again.' };
   }
 }
 
-// 1. THE HARD BLOCK: Prevents login in temporary browsers
+// Block login in temporary in-app QR scanners
 function checkInAppBrowser() {
   const ua = navigator.userAgent || navigator.vendor || window.opera;
   const isTemporaryBrowser = /(FBAN|FBAV|Instagram|Snapchat|TikTok|wv|iPhone.*AppleWebKit(?!.*Safari))/i.test(ua);
@@ -383,7 +476,7 @@ function checkInAppBrowser() {
 }
 checkInAppBrowser();
 
-// // 2. THE PWA INSTALL TRIGGER & iOS SUPPORT
+// PWA Install Trigger & iOS Support
 let deferredPrompt;
 const installBtnSplash = document.getElementById('install-app-btn');
 const installBtnGate = document.getElementById('install-app-btn-gate');
@@ -438,20 +531,20 @@ if (!isStandalone) {
   }
 }
 
-async function checkCode(){
+async function checkCode() {
   const input = document.getElementById('code-input');
   const err = document.getElementById('code-error');
   const btn = document.getElementById('code-submit');
   btn.disabled = true;
   btn.textContent = 'Checking...';
-  
+
   const result = await redeemCode(input.value);
-  
-  if(result.ok){
+
+  if (result.ok) {
     const validCode = input.value.trim().toUpperCase();
     currentSessionData.code = validCode;
     saveTokenAndCode(getDeviceToken(), validCode);
-    
+
     err.textContent = '';
     showAppAfterUnlock(result.slotsUsed, result.maxDevices);
   } else {
@@ -461,142 +554,128 @@ async function checkCode(){
   }
 }
 
-document.getElementById('code-input').addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter') checkCode();
+document.getElementById('code-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') checkCode();
 });
 
-// On load: Safely check if this device already unlocked before
-(function(){
-  if(currentSessionData.code){
+// Restore previous unlock session if saved
+(function() {
+  if (currentSessionData.code) {
     const btn = document.getElementById('code-submit');
     const input = document.getElementById('code-input');
-    
     btn.disabled = true;
     btn.textContent = 'Restoring session...';
-    input.value = currentSessionData.code; // Show them we remembered it
-    
+    input.value = currentSessionData.code;
     showAppAfterUnlock();
   }
 })();
 
+// --- Start Camera ---
+let started = false;
+function startAR() {
+  if (started) return;
+  started = true;
 
-// --- Start Camera button (this wrapper was missing — the actual bug) ---
+  unlockAudio();
 
-  let started=false;
-function startAR(){
-  if(started) return;
-  started=true;
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('loading').style.display = 'flex';
 
-  // --- SAFE CODE: Safari Audio Unlock Trick ---
-  try {
-    ANIMALS.forEach(a => {
-      if(!audioCache[a.audio]) {
-        const snd = new Audio(`./assets/audio/${a.audio}.mp3`);
-        snd.muted = true; 
-        snd.loop = true;  
-        
-        const playPromise = snd.play();
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            snd.pause();
-            snd.muted = false; 
-            snd.currentTime = 0;
-          }).catch(err => {});
-        }
-        audioCache[a.audio] = snd;
-      }
-    });
-  } catch(audioErr) {
-    console.warn("Audio unlock skipped.");
-  }
-  // --- END SAFE CODE ---
+  const scene = document.getElementById('arScene');
 
-  document.getElementById('splash').style.display='none';
-  document.getElementById('loading').style.display='flex';
-
-  const scene=document.getElementById('arScene');
-
-  function reallyStart(){
-    const sys=scene.systems['mindar-image-system'];
-    if(sys && typeof sys.start==='function'){
+  function reallyStart() {
+    const sys = scene.systems['mindar-image-system'];
+    if (sys && typeof sys.start === 'function') {
       sys.start();
     } else {
-      setTimeout(reallyStart,100);
+      setTimeout(reallyStart, 100);
     }
   }
 
-  if(scene.hasLoaded){
+  if (scene.hasLoaded) {
     reallyStart();
   } else {
     scene.addEventListener('loaded', reallyStart);
   }
 
   let uiShown = false;
-  function showUI(){
-    if(uiShown) return;
+  function showUI() {
+    if (uiShown) return;
     uiShown = true;
-    document.getElementById('loading').style.display='none';
-    document.getElementById('ui-top').style.display='flex';
-    document.getElementById('ui-bottom').style.display='block';
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('ui-top').style.display = 'flex';
+    document.getElementById('ui-bottom').style.display = 'block';
   }
 
-  scene.addEventListener('renderstart', ()=>setTimeout(showUI, 600));
+  scene.addEventListener('renderstart', () => setTimeout(showUI, 600));
   setTimeout(showUI, 6000);
 }
 
+// --- Target Tracking, Lazy Model Loading & Linger Logic ---
 const LINGER_MS = 15000;
 let activeIndex = -1;
 let frozenIndex = -1;
-const hideTimers = new Array(10).fill(null);
+const hideTimers = new Array(ALPHABET.length).fill(null);
 const targets = [];
 const strips = [];
 const modelEls = [];
 const frozenSlot = document.getElementById('frozen-slot');
 
-function clearLinger(i){
-  if(hideTimers[i]){ clearTimeout(hideTimers[i]); hideTimers[i]=null; }
+function clearLinger(i) {
+  if (hideTimers[i]) { clearTimeout(hideTimers[i]); hideTimers[i] = null; }
 }
 
-function reattachToTarget(i){
-  if(frozenIndex === i){
+function reattachToTarget(i) {
+  if (frozenIndex === i) {
     targets[i].object3D.add(modelEls[i].object3D);
     frozenIndex = -1;
   }
 }
 
-function hideTarget(i){
+function hideTarget(i) {
   clearLinger(i);
   strips[i].classList.remove('found');
   reattachToTarget(i);
   targets[i].object3D.visible = false;
   modelEls[i].object3D.visible = false;
-  stopAudio(ANIMALS[i].audio);
-  if(activeIndex === i) activeIndex = -1;
-  document.getElementById('hint').style.opacity='1';
-  document.getElementById('name-banner').style.display='none';
+  stopAudio();
+  if (activeIndex === i) activeIndex = -1;
+  document.getElementById('hint').style.opacity = '1';
+  document.getElementById('name-banner').style.display = 'none';
 }
 
-function showTarget(i){
-  if((activeIndex !== -1 && activeIndex !== i) || (frozenIndex !== -1 && frozenIndex !== i)){
+function ensureModelLoaded(i) {
+  const el = modelEls[i];
+  if (!el.getAttribute('src')) {
+    const src = el.getAttribute('data-src');
+    if (src) el.setAttribute('src', src);
+  }
+}
+
+function showTarget(i) {
+  if ((activeIndex !== -1 && activeIndex !== i) || (frozenIndex !== -1 && frozenIndex !== i)) {
     const other = frozenIndex !== -1 ? frozenIndex : activeIndex;
     hideTarget(other);
   }
   clearLinger(i);
   reattachToTarget(i);
+  ensureModelLoaded(i);
+
   activeIndex = i;
-  const a = ANIMALS[i];
+  const item = ALPHABET[i];
   strips[i].classList.add('found');
+  strips[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+
   targets[i].object3D.visible = true;
   modelEls[i].object3D.visible = true;
-  document.getElementById('hint').style.opacity='0';
-  document.getElementById('banner-emoji').textContent=a.em;
-  document.getElementById('banner-en').textContent=a.en;
-  document.getElementById('banner-ml').textContent=a.ml;
-  document.getElementById('name-banner').style.display='block';
-  playAudio(a.audio);
+  document.getElementById('hint').style.opacity = '0';
+  document.getElementById('banner-letter').textContent = item.letter;
+  document.getElementById('banner-en').textContent = `${item.letter} for ${item.word}`;
+  document.getElementById('name-banner').style.display = 'block';
+  playAudio(item.file);
 }
 
-function freezeInPlace(i){
+function freezeInPlace(i) {
   const targetObj = targets[i].object3D;
   const modelObj = modelEls[i].object3D;
   targetObj.updateWorldMatrix(true, false);
@@ -608,27 +687,26 @@ function freezeInPlace(i){
   frozenIndex = i;
 }
 
-for(let i=0;i<10;i++){
-  targets[i]=document.getElementById('t'+i);
-  strips[i]=document.getElementById('sc'+i);
-  modelEls[i]=targets[i].querySelector('a-gltf-model');
+for (let i = 0; i < ALPHABET.length; i++) {
+  targets[i] = document.getElementById('t' + i);
+  strips[i] = document.getElementById('sc' + i);
+  modelEls[i] = targets[i].querySelector('a-gltf-model');
 }
 
-for(let i=0;i<10;i++){
-  const target=targets[i];
-  target.addEventListener('targetFound',()=>{
+for (let i = 0; i < ALPHABET.length; i++) {
+  const target = targets[i];
+  target.addEventListener('targetFound', () => {
     showTarget(i);
   });
-  target.addEventListener('targetLost',()=>{
-    if(activeIndex !== i) return;
+  target.addEventListener('targetLost', () => {
+    if (activeIndex !== i) return;
     activeIndex = -1;
     freezeInPlace(i);
-    hideTimers[i] = setTimeout(()=>{
+    hideTimers[i] = setTimeout(() => {
       hideTarget(i);
     }, LINGER_MS);
   });
 }
-
 </script>
 </body>
 </html>

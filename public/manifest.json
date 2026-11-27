@@ -1,7 +1,7 @@
 {
-  "name": "Ketry AR Flashcards",
+  "name": "Ketry A-Z AR Book",
   "short_name": "Ketry",
-  "description": "Bilingual Phygital AR Animal Flashcards",
+  "description": "Phygital A-Z AR Learning Book for Kids",
   "start_url": "/ar.html",
   "display": "standalone",
   "background_color": "#0a0e0a",

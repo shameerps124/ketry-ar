@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Ketry — Phygital AR Animal Flashcards</title>
+<title>Ketry — Phygital A–Z AR Learning Book</title>
 
 <!-- PWA Manifest & Theme Color -->
 <link rel="manifest" href="/manifest.json">
@@ -99,7 +99,7 @@ nav{
 .stat-num{font-family:'Fredoka',sans-serif;font-size:26px;font-weight:700;color:var(--red);}
 .stat-label{font-size:12px;color:var(--soft);font-weight:600;}
 
-/* HOW IT WORKS — VIDEO STEPS (the new hero signature: real proof, not stock art) */
+/* HOW IT WORKS — VIDEO STEPS */
 .how-video{background:#fff;}
 .video-steps{
   display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:48px;
@@ -140,19 +140,21 @@ section{padding:80px 5%;}
 }
 .section-sub{font-size:15px;color:var(--soft);max-width:520px;line-height:1.65;}
 
-/* SHOP */
+/* A-Z GRID */
 .shop{background:var(--cream);}
-.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px;margin-top:36px;}
-.animal-card{
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:14px;margin-top:36px;}
+.letter-card{
   background:#fff;border-radius:16px;padding:20px 12px 16px;
   text-align:center;border:1.5px solid var(--border);
   transition:transform .15s,border-color .15s,box-shadow .15s;
   cursor:default;
 }
-.animal-card:hover{transform:translateY(-3px);border-color:var(--pink);box-shadow:0 8px 24px rgba(192,57,43,.08);}
-.animal-card .em{font-size:40px;margin-bottom:8px;display:block;}
-.animal-card .name{font-family:'Fredoka',sans-serif;font-weight:800;font-size:13px;color:var(--dark);}
-.animal-card .ml{font-size:11px;color:var(--soft);margin-top:2px;}
+.letter-card:hover{transform:translateY(-3px);border-color:var(--pink);box-shadow:0 8px 24px rgba(192,57,43,.08);}
+.letter-card .letter-badge{
+  font-family:'Fredoka',sans-serif;font-size:34px;font-weight:700;
+  color:var(--red);display:block;line-height:1.1;margin-bottom:6px;
+}
+.letter-card .name{font-family:'Fredoka',sans-serif;font-weight:600;font-size:14px;color:var(--dark);}
 
 /* PRODUCT BOX */
 .product-box{
@@ -165,14 +167,20 @@ section{padding:80px 5%;}
   display:flex;align-items:center;justify-content:center;
   padding:48px 32px;min-height:300px;
 }
-.product-kit{text-align:center;}
-.kit-cards{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
-.kit-card{
-  width:54px;height:72px;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;font-size:22px;
-  box-shadow:0 4px 12px rgba(0,0,0,.1);
+.book-mockup{
+  width:210px;height:240px;border-radius:14px 20px 20px 14px;
+  background:linear-gradient(145deg,#0F172A,#1E293B);
+  color:#fff;padding:24px 20px;text-align:center;
+  display:flex;flex-direction:column;justify-content:space-between;align-items:center;
+  box-shadow:-8px 14px 30px rgba(15,23,42,0.28);
+  border-left:10px solid #1D9E75;
 }
-.kit-label{font-family:'Fredoka',sans-serif;font-weight:800;font-size:14px;color:var(--mid);}
+.book-badge{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:#22D3EE;border:1px solid rgba(34,211,238,0.4);padding:4px 10px;border-radius:50px;
+}
+.book-title{font-family:'Fredoka',sans-serif;font-size:38px;font-weight:700;line-height:1.05;color:#fff;}
+.book-sub{font-size:12px;color:rgba(255,255,255,0.7);font-weight:600;}
 .product-info{padding:40px 36px;display:flex;flex-direction:column;justify-content:center;}
 .product-name{font-family:'Fredoka',sans-serif;font-weight:900;font-size:22px;margin-bottom:6px;}
 .product-desc{font-size:14px;color:var(--soft);line-height:1.65;margin-bottom:20px;}
@@ -259,10 +267,11 @@ footer a{color:rgba(255,255,255,0.5);text-decoration:none;}
 @media(max-width:768px){
   .hero{padding:110px 5% 40px;}
   .product-box{grid-template-columns:1fr;}
-  .product-visual{min-height:200px;}
+  .product-visual{min-height:240px;}
   nav .nav-links{display:none;}
 }
-/* PERSISTENT AR ACCESS — always visible, no scrolling or menu-hunting needed */
+
+/* PERSISTENT AR ACCESS */
 #ar-fab{
   position:fixed;bottom:24px;right:24px;z-index:500;
   width:60px;height:60px;border-radius:50%;
@@ -286,29 +295,28 @@ footer a{color:rgba(255,255,255,0.5);text-decoration:none;}
   <a href="/" class="nav-logo"><img src="./assets/logo.png" alt="Ketry"/></a>
   <div class="nav-links">
     <a href="#how">How it works</a>
-    <a href="#cards">The Cards</a>
-    <a href="#shop">Buy Kit</a>
+    <a href="#letters">A–Z Inside</a>
+    <a href="#shop">Buy Book</a>
     <a href="ar.html">📷 Open AR</a>
   </div>
-  <a href="#shop" class="nav-cta">Buy Kit ₹499</a>
+  <a href="#shop" class="nav-cta">Buy Book ₹499</a>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
   <div class="hero-content">
-    <div class="hero-tag"><span>✨</span> PhyGital Learning for Ages 2–6</div>
-    <h1>Flashcards that <em>come alive</em> on your phone</h1>
-    <p>Point the Ketry app at any card and watch a 3D animal pop out, roar, and teach your child its name in English and Malayalam.</p>
+    <div class="hero-tag"><span>✨</span> Phygital A–Z Learning for Ages 2–6</div>
+    <h1>An A–Z book that <em>comes alive</em> on your phone</h1>
+    <p>Point the Ketry app at any page and watch 26 interactive 3D models pop out, animate, and teach your child every letter from A to Z.</p>
     <div class="hero-btns">
-      <a href="#shop" class="btn-primary">🛒 Buy Kit — ₹499</a>
+      <a href="#shop" class="btn-primary">🛒 Buy Book — ₹499</a>
     </div>
     <div class="hero-stats">
-      <div class="stat"><div class="stat-num">10</div><div class="stat-label">Animal cards</div></div>
-      <div class="stat"><div class="stat-num">2</div><div class="stat-label">Languages</div></div>
+      <div class="stat"><div class="stat-num">26</div><div class="stat-label">A–Z 3D Pages</div></div>
+      <div class="stat"><div class="stat-num">3D + Audio</div><div class="stat-label">Interactive AR</div></div>
       <div class="stat"><div class="stat-num">Age 2–6</div><div class="stat-label">Ideal range</div></div>
     </div>
   </div>
-</section>
 </section>
 
 <!-- HOW IT WORKS -->
@@ -324,8 +332,8 @@ footer a{color:rgba(255,255,255,0.5);text-decoration:none;}
         </video>
       </div>
       <div class="step-num-badge">1</div>
-      <h3>Scan the card</h3>
-      <p>Open the Ketry link, allow camera access, and point your phone at any of the 10 cards.</p>
+      <h3>Scan any page</h3>
+      <p>Open the Ketry link, allow camera access, and point your phone at any of the 26 A–Z pages.</p>
     </div>
     <div class="video-step">
       <div class="video-frame">
@@ -335,7 +343,7 @@ footer a{color:rgba(255,255,255,0.5);text-decoration:none;}
       </div>
       <div class="step-num-badge">2</div>
       <h3>Watch it come alive</h3>
-      <p>A 3D animal lifts right off the card — no app, no download, instantly in your browser.</p>
+      <p>An animated 3D model lifts right off the page — no app, no download, instantly in your browser.</p>
     </div>
     <div class="video-step">
       <div class="video-frame">
@@ -344,15 +352,13 @@ footer a{color:rgba(255,255,255,0.5);text-decoration:none;}
         </video>
       </div>
       <div class="step-num-badge">3</div>
-      <h3>Learn the name</h3>
-      <p>Bilingual audio teaches the animal's name in English and Malayalam, every single scan.</p>
+      <h3>Learn A to Z</h3>
+      <p>Clear English pronunciation and fun sound effects bring every letter and word to life on every scan.</p>
     </div>
   </div>
 </section>
 
 <script>
-// Graceful fallback: if a video file hasn't been uploaded yet (404) or fails
-// to play, swap it for a friendly placeholder instead of a broken box.
 document.querySelectorAll('.how-video-el').forEach(function(vid){
   vid.addEventListener('error', function(){
     const frame = vid.closest('.video-frame');
@@ -361,50 +367,62 @@ document.querySelectorAll('.how-video-el').forEach(function(vid){
 });
 </script>
 
-<!-- CARDS -->
-<section id="cards" style="background:#fff;padding:80px 5%;">
-  <div class="section-tag">The 10 cards</div>
-  <h2 class="section-title">Every card, a new world</h2>
-  <p class="section-sub">Scan the camera icon on any card for a bilingual AR experience.</p>
-  <div class="shop-grid" style="margin-top:36px;">
-    <div class="animal-card"><span class="em">🐄</span><div class="name">Cow</div><div class="ml">പശു</div></div>
-    <div class="animal-card"><span class="em">🦕</span><div class="name">Dinosaur</div><div class="ml">ഡൈനോസർ</div></div>
-    <div class="animal-card"><span class="em">🦆</span><div class="name">Duck</div><div class="ml">താറാവ്</div></div>
-    <div class="animal-card"><span class="em">🦊</span><div class="name">Fox</div><div class="ml">കുറുക്കൻ</div></div>
-    <div class="animal-card"><span class="em">🐸</span><div class="name">Frog</div><div class="ml">തവള</div></div>
-    <div class="animal-card"><span class="em">🐴</span><div class="name">Horse</div><div class="ml">കുതിര</div></div>
-    <div class="animal-card"><span class="em">🦝</span><div class="name">Raccoon</div><div class="ml">റക്കൂൺ</div></div>
-    <div class="animal-card"><span class="em">🦈</span><div class="name">Shark</div><div class="ml">സ്രാവ്</div></div>
-    <div class="animal-card"><span class="em">🐅</span><div class="name">Tiger</div><div class="ml">കടുവ</div></div>
-    <div class="animal-card"><span class="em">🐢</span><div class="name">Turtle</div><div class="ml">ആമ</div></div>
+<!-- A-Z LETTERS -->
+<section id="letters" style="background:#fff;padding:80px 5%;">
+  <div class="section-tag">26 Interactive Pages</div>
+  <h2 class="section-title">Every letter, a new 3D world</h2>
+  <p class="section-sub">From Apple to Zebra — scan any page in the Ketry A–Z AR Book to bring the letter to life.</p>
+  <div class="shop-grid">
+    <div class="letter-card"><span class="letter-badge">A</span><div class="name">Apple</div></div>
+    <div class="letter-card"><span class="letter-badge">B</span><div class="name">Bear</div></div>
+    <div class="letter-card"><span class="letter-badge">C</span><div class="name">Cat</div></div>
+    <div class="letter-card"><span class="letter-badge">D</span><div class="name">Dog</div></div>
+    <div class="letter-card"><span class="letter-badge">E</span><div class="name">Elephant</div></div>
+    <div class="letter-card"><span class="letter-badge">F</span><div class="name">Frog</div></div>
+    <div class="letter-card"><span class="letter-badge">G</span><div class="name">Giraffe</div></div>
+    <div class="letter-card"><span class="letter-badge">H</span><div class="name">Horse</div></div>
+    <div class="letter-card"><span class="letter-badge">I</span><div class="name">Ice Cream</div></div>
+    <div class="letter-card"><span class="letter-badge">J</span><div class="name">Juice</div></div>
+    <div class="letter-card"><span class="letter-badge">K</span><div class="name">Kangaroo</div></div>
+    <div class="letter-card"><span class="letter-badge">L</span><div class="name">Lion</div></div>
+    <div class="letter-card"><span class="letter-badge">M</span><div class="name">Monkey</div></div>
+    <div class="letter-card"><span class="letter-badge">N</span><div class="name">Nest</div></div>
+    <div class="letter-card"><span class="letter-badge">O</span><div class="name">Octopus</div></div>
+    <div class="letter-card"><span class="letter-badge">P</span><div class="name">Penguin</div></div>
+    <div class="letter-card"><span class="letter-badge">Q</span><div class="name">Queen</div></div>
+    <div class="letter-card"><span class="letter-badge">R</span><div class="name">Raccoon</div></div>
+    <div class="letter-card"><span class="letter-badge">S</span><div class="name">Sun</div></div>
+    <div class="letter-card"><span class="letter-badge">T</span><div class="name">Tiger</div></div>
+    <div class="letter-card"><span class="letter-badge">U</span><div class="name">Umbrella</div></div>
+    <div class="letter-card"><span class="letter-badge">V</span><div class="name">Van</div></div>
+    <div class="letter-card"><span class="letter-badge">W</span><div class="name">Whale</div></div>
+    <div class="letter-card"><span class="letter-badge">X</span><div class="name">Xylophone</div></div>
+    <div class="letter-card"><span class="letter-badge">Y</span><div class="name">Yak</div></div>
+    <div class="letter-card"><span class="letter-badge">Z</span><div class="name">Zebra</div></div>
   </div>
 </section>
 
 <!-- SHOP -->
 <section class="shop" id="shop">
-  <div class="section-tag">Buy the kit</div>
-  <h2 class="section-title">Ketry Animal AR Kit</h2>
-  <p class="section-sub">Everything your child needs for a phygital learning adventure.</p>
+  <div class="section-tag">Buy the book</div>
+  <h2 class="section-title">Ketry A–Z AR Book</h2>
+  <p class="section-sub">Everything your child needs for a phygital alphabet learning adventure.</p>
 
   <div class="product-box">
     <div class="product-visual">
-      <div class="product-kit">
-        <div class="kit-cards">
-          <div class="kit-card" style="background:#4ECDC4">🐄</div>
-          <div class="kit-card" style="background:#EFA52A">🦊</div>
-          <div class="kit-card" style="background:#C0392B">🐸</div>
-          <div class="kit-card" style="background:#7F77DD">🦕</div>
-        </div>
-        <div class="kit-label">+6 more cards</div>
+      <div class="book-mockup">
+        <span class="book-badge">WebAR Edition</span>
+        <div class="book-title">A–Z</div>
+        <div class="book-sub">Ketry AR Learning Book<br/>26 3D Models</div>
       </div>
     </div>
     <div class="product-info">
-      <div class="product-name">Animal Flashcard AR Kit</div>
-      <div class="product-desc">10 premium printed cards + unlimited WebAR access. No app, no subscription.</div>
+      <div class="product-name">Ketry A–Z AR Learning Book</div>
+      <div class="product-desc">26 interactive printed A–Z pages + unlimited WebAR access. No app, no subscription.</div>
       <ul class="product-includes" style="list-style:none;padding:0;">
-        <li><span class="check">✓</span>10 printed animal flashcards (350gsm)</li>
-        <li><span class="check">✓</span>WebAR experience for all 10 animals</li>
-        <li><span class="check">✓</span>Bilingual English + Malayalam audio</li>
+        <li><span class="check">✓</span>26 printed A–Z AR pages (Apple to Zebra)</li>
+        <li><span class="check">✓</span>Interactive 3D WebAR models for all 26 letters</li>
+        <li><span class="check">✓</span>Clear English pronunciation &amp; sound effects</li>
         <li><span class="check">✓</span>Works on any Android or iPhone</li>
         <li><span class="check">✓</span>Free delivery across India</li>
       </ul>
@@ -444,7 +462,7 @@ document.querySelectorAll('.how-video-el').forEach(function(vid){
     <div class="modal-sub">Delivered in 3–5 business days across India</div>
 
     <div class="order-summary">
-      <div class="order-row"><span>Ketry Animal AR Kit × <span id="modal-qty">1</span></span><span id="modal-subtotal">₹499</span></div>
+      <div class="order-row"><span>Ketry A–Z AR Book × <span id="modal-qty">1</span></span><span id="modal-subtotal">₹499</span></div>
       <div class="order-row"><span>Delivery</span><span style="color:var(--green)">Free</span></div>
       <div class="order-row total"><span>Total</span><span id="modal-total">₹499</span></div>
     </div>
@@ -455,7 +473,7 @@ document.querySelectorAll('.how-video-el').forEach(function(vid){
     </div>
     <div class="form-group">
       <label class="form-label">Phone number</label>
-      <input class="form-input" type="tel" id="f-phone" placeholder="+91 98765 43210"/>
+      <input class="form-input" type="tel" id="f-phone" placeholder="9876543210"/>
     </div>
     <div class="form-group">
       <label class="form-label">Email address</label>
@@ -534,7 +552,7 @@ async function proceedToPayment(){
     const res = await fetch('/api/create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, email, address: addr, city, pin, amount: qty * PRICE })
+      body: JSON.stringify({ name, phone, email, address: addr, city, pin, qty })
     });
     const data = await res.json();
 
@@ -545,7 +563,6 @@ async function proceedToPayment(){
       return;
     }
 
-    // Safely try to remember the order id (ignore if browser blocks it)
     try {
       sessionStorage.setItem('ketryLastOrderId', data.order_id);
     } catch(storageErr) {
@@ -556,8 +573,6 @@ async function proceedToPayment(){
     cashfree.checkout({
       paymentSessionId: data.payment_session_id,
       redirectTarget: '_self'
-      // Cashfree will redirect back to the return_url set server-side
-      // (order-status.html?order_id=...) once payment completes.
     });
   } catch(err){
     alert('Something went wrong connecting to payment. Please check your connection and try again.');

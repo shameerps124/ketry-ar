@@ -38,7 +38,7 @@ function getParam(name){
 
 async function pollStatus(){
   let fallbackId = null;
-  try { fallbackId = sessionStorage.getItem('ketryLastOrderId'); } catch(e){ /* storage blocked — harmless */ }
+  try { fallbackId = sessionStorage.getItem('ketryLastOrderId'); } catch(e){}
   const orderId = getParam('order_id') || fallbackId;
   const card = document.getElementById('card');
 
@@ -51,7 +51,7 @@ async function pollStatus(){
     return;
   }
 
-  const maxAttempts = 60; // ~2 full minutes to allow for mobile UPI app switching
+  const maxAttempts = 60;
   for(let attempt=0; attempt<maxAttempts; attempt++){
     try {
       const res = await fetch(`/api/order-status?order_id=${encodeURIComponent(orderId)}`);
@@ -61,9 +61,9 @@ async function pollStatus(){
         card.innerHTML = `
           <div class="icon">🎉</div>
           <h1>Payment successful!</h1>
-          <p>Your Ketry order is confirmed and on its way — delivery in 3–5 days.</p>
-          <div class="code-box" style="font-size:15px;letter-spacing:normal;">📦 Your unique AR unlock code will be printed inside the box when it arrives</div>
-          <p style="font-size:13px;">When your kit arrives, look inside the box for your code and enter it the first time you open the AR experience on each family device (up to 3 devices).</p>
+          <p>Your Ketry A–Z AR Book order is confirmed and on its way — delivery in 3–5 days.</p>
+          <div class="code-box" style="font-size:15px;letter-spacing:normal;">📖 Your unique AR unlock code is printed inside your book when it arrives</div>
+          <p style="font-size:13px;">When your book arrives, look inside the cover for your code and enter it the first time you open the AR experience on each family device (up to 3 devices).</p>
           <a class="back" href="./index.html">← Back to Ketry</a>`;
         return;
       }
@@ -75,14 +75,12 @@ async function pollStatus(){
           <a class="btn" href="./index.html">Try Again →</a>`;
         return;
       }
-      // still 'pending' — wait and retry
       await new Promise(r => setTimeout(r, 2000));
     } catch(e){
       await new Promise(r => setTimeout(r, 2000));
     }
   }
 
-  // Timed out waiting — payment may still be processing on Cashfree's side
   card.innerHTML = `
     <div class="icon">⏳</div>
     <h1>Still confirming…</h1>
